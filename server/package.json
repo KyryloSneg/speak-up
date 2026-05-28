@@ -6,23 +6,48 @@
   "main": "./index.ts",
   "imports": {
     "#middlewares/*": "./middlewares/*",
-    "#utils/*": "./utils/*"
+    "#services/*": "./services/*",
+    "#controllers/*": "./controllers/*",
+    "#errors/*": "./errors/*",
+    "#generated/*": "./generated/*",
+    "#validators/*": "./validators/*",
+    "#dtos/*": "./dtos/*",
+    "#utils/*": "./utils/*",
+    "#router/*": "./router/*",
+    "#types/*": "./types/*"
   },
   "scripts": {
-    "start": "node index.ts",
-    "dev": "nodemon",
+    "start": "tsx index.ts",
+    "dev": "nodemon --exec tsx index.ts",
     "lint": "eslint ."
   },
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "6.19",
     "@speak-up/shared": "workspace:*",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "jose": "^6.2.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.12.4",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
     "nodemon": "^3.1.11",
-    "prisma": "^7.8.0"
-  }
+    "prisma": "6.19",
+    "shared": "^0.2.0",
+    "tsx": "^4.22.3",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.59.4"
+  },
+  "packageManager": "pnpm@10.32.1"
 }

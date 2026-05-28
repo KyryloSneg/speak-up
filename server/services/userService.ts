@@ -1,0 +1,149 @@
+import mapToUserDto, { type UserDto } from "#dtos/userDto.ts";
+import ApiError from "#errors/ApiError.ts";
+import type { Token, User } from "#generated/prisma/client.ts";
+import prisma from "#services/prisma.ts";
+import TokenService from "#services/tokenService.ts";
+import type { JWTTokens } from "#types/jwtTokens.ts";
+import userToJwtPayload from "#utils/userToJwtPayload.ts";
+import { blobToBase64, generateLetterPictureBlob } from "@speak-up/shared";
+import bcrypt from "bcrypt";
+
+interface UserDataWithTokens {
+  tokens: JWTTokens;
+  user: UserDto;
+}
+
+class UserService {
+  // just a service's helper
+  static async generateUserDataWithTokens(
+    user: User,
+  ): Promise<UserDataWithTokens> {
+    const payload = userToJwtPayload(user);
+
+    const tokens = await TokenService.generateTokens(payload);
+    await TokenService.saveToken(tokens.refreshToken, user.id);
+
+    const userDto = mapToUserDto(user);
+    const userData = {
+      tokens,
+      user: userDto,
+    };
+
+    return userData;
+  }
+
+  static async registration(
+    nickname: string,
+    username: string,
+    password: string,
+  ): Promise<UserDataWithTokens> {
+    const usernameCandidate = await prisma.user.findUnique({
+      where: {
+        username,
+      },
+    });
+
+    if (usernameCandidate) {
+      throw ApiError.BadRequest(
+        `User with such a username ${username} already exists`,
+      );
+    }
+
+    const hashPassword = await bcrypt.hash(password, 3);
+
+    const letterPictureBlob = await generateLetterPictureBlob(nickname);
+    if (!letterPictureBlob) {
+      // let the error middleware pick it up as 500
+      throw new Error("Letter picture generation is failed");
+    }
+
+    // save pictures as a stinky Base64 string because i don't want
+    // to spend time on setting up s3 (this project is not about this)
+    const letterPicture = await blobToBase64(letterPictureBlob);
+    const picture = letterPicture;
+
+    const user = await prisma.user.create({
+      data: {
+        username,
+        nickname,
+        picture,
+        letterPicture,
+        password: hashPassword,
+      },
+    });
+
+    const userData = await UserService.generateUserDataWithTokens(user);
+    return userData;
+  }
+
+  static async login(
+    username: string,
+    password: string,
+  ): Promise<UserDataWithTokens> {
+    const usernameCandidate = await prisma.user.findUnique({
+      where: {
+        username,
+      },
+    });
+
+    if (!usernameCandidate) {
+      throw ApiError.BadRequest(
+        `User with such a username ${username} doesn't exist`,
+      );
+    }
+
+    const isPasswordEqual = await bcrypt.compare(
+      password,
+      usernameCandidate.password,
+    );
+
+    if (!isPasswordEqual) {
+      throw ApiError.BadRequest("Invalid password");
+    }
+
+    const userData =
+      await UserService.generateUserDataWithTokens(usernameCandidate);
+
+    return userData;
+  }
+
+  static async logout(refreshToken: string | undefined): Promise<Token | null> {
+    if (!refreshToken) return null;
+
+    const token = await prisma.token.findUnique({ where: { refreshToken } });
+    return token;
+  }
+
+  static async changeNickname(
+    nickname: string,
+    userId: string,
+  ): Promise<UserDto> {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { nickname },
+    });
+
+    const userDto = mapToUserDto(user);
+    return userDto;
+  }
+
+  static async refresh(
+    refreshToken: string | undefined,
+  ): Promise<UserDataWithTokens> {
+    if (!refreshToken) throw ApiError.UnauthorizedError();
+
+    const payload = await TokenService.validateRefreshToken(refreshToken);
+    if (!payload) throw ApiError.UnauthorizedError();
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+    });
+
+    if (!user) throw ApiError.UnauthorizedError();
+
+    const userData = await UserService.generateUserDataWithTokens(user);
+    return userData;
+  }
+}
+
+export default UserService;
