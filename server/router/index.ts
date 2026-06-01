@@ -1,6 +1,6 @@
 import UserController from "#controllers/userController.ts";
 import authMiddleware from "#middlewares/authMiddleware.ts";
-import changeNicknameBodyStructureValidation from "#validators/changeNicknameBodyStructureValidation.ts";
+import changeNicknameBodyStructureValidator from "#validators/changeNicknameBodyStructureValidator.ts";
 import nicknameValidator from "#validators/nicknameValidator.ts";
 import passwordValidator from "#validators/passwordValidator.ts";
 import registerBodyStructureValidator from "#validators/registerBodyStructureValidator.ts";
@@ -32,7 +32,7 @@ router.post("/logout", UserController.logout);
 router.patch(
   "/change-nickname",
   authMiddleware,
-  ...changeNicknameBodyStructureValidation(),
+  ...changeNicknameBodyStructureValidator(),
   body("nickname").custom(nicknameValidator),
   // @ts-expect-error: We are 100% sure that the incoming request
   //                   will be AuthRequest type after auth middleware

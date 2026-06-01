@@ -1,5 +1,11 @@
 import type { CookieOptions, Response } from "express";
 
+export const DEFAULT_COOKIE_SECURITY_OPTIONS: CookieOptions = {
+  secure: true,
+  sameSite: "none",
+  httpOnly: true,
+} as const;
+
 function setCookie(
   res: Response,
   name: string,
@@ -8,9 +14,7 @@ function setCookie(
 ): void {
   res.cookie(name, value, {
     ...options,
-    secure: true,
-    sameSite: "none",
-    httpOnly: true,
+    ...DEFAULT_COOKIE_SECURITY_OPTIONS,
   });
 }
 

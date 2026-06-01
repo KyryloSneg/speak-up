@@ -43,4 +43,4 @@ test-results/
 playwright-report/
 
 /server/generated/prisma
-
+.env.test

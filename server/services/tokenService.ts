@@ -2,7 +2,11 @@ import type { Token } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
 import type { JWTPayload } from "#types/jwtPayload.ts";
 import type { JWTTokens } from "#types/jwtTokens.ts";
-import { REFRESH_TOKEN_EXPIRATION_TIME_DAYS } from "#utils/consts.ts";
+import {
+  ACCESS_TOKEN_EXPIRATION_TIME_MINUTES,
+  REFRESH_TOKEN_EXPIRATION_TIME_DAYS,
+} from "#utils/consts.ts";
+import filterJwtPayload from "#utils/filterJwtPayload.ts";
 import { getSymmetricSecret } from "@speak-up/shared";
 import { jwtVerify, SignJWT } from "jose";
 
@@ -11,7 +15,7 @@ class TokenService {
     const accessToken = await new SignJWT(payload)
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
-      .setExpirationTime("15m")
+      .setExpirationTime(`${ACCESS_TOKEN_EXPIRATION_TIME_MINUTES}m`)
       .sign(getSymmetricSecret(process.env.JWT_ACCESS_SECRET));
 
     const refreshToken = await new SignJWT(payload)
@@ -33,7 +37,7 @@ class TokenService {
         getSymmetricSecret(process.env.JWT_ACCESS_SECRET),
       );
 
-      return userData;
+      return filterJwtPayload(userData);
     } catch {
       return null;
     }
@@ -46,7 +50,7 @@ class TokenService {
         getSymmetricSecret(process.env.JWT_REFRESH_SECRET),
       );
 
-      return userData;
+      return filterJwtPayload(userData);
     } catch {
       return null;
     }

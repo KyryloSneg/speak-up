@@ -1,9 +1,22 @@
 import type { User } from "#generated/prisma/client.ts";
 
-export type UserDto = Omit<User, "password">;
+export type UserDto = {
+  id: User["id"];
+  username: User["username"];
+  nickname: User["nickname"];
+  picture: User["picture"];
+  letterPicture: User["letterPicture"];
+};
 
 function mapToUserDto(user: User): UserDto {
-  const { password: _, ...userDto } = user;
+  const userDto: UserDto = {
+    id: user.id,
+    username: user.username,
+    nickname: user.nickname,
+    picture: user.picture,
+    letterPicture: user.letterPicture,
+  };
+
   return userDto;
 }
 

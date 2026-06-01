@@ -13,7 +13,7 @@ export function getZodUsernameValidation() {
     .string("Invalid username")
     .trim()
     .min(3, "Username is too short")
-    .max(50, "Username is too long");
+    .max(30, "Username is too long");
 }
 
 export function getZodPasswordValidation() {

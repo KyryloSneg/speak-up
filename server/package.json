@@ -5,21 +5,25 @@
   "type": "module",
   "main": "./index.ts",
   "imports": {
-    "#middlewares/*": "./middlewares/*",
-    "#services/*": "./services/*",
     "#controllers/*": "./controllers/*",
+    "#dtos/*": "./dtos/*",
     "#errors/*": "./errors/*",
     "#generated/*": "./generated/*",
-    "#validators/*": "./validators/*",
-    "#dtos/*": "./dtos/*",
-    "#utils/*": "./utils/*",
+    "#middlewares/*": "./middlewares/*",
     "#router/*": "./router/*",
-    "#types/*": "./types/*"
+    "#services/*": "./services/*",
+    "#tests/*": "./tests/*",
+    "#types/*": "./types/*",
+    "#utils/*": "./utils/*",
+    "#validators/*": "./validators/*"
   },
   "scripts": {
     "start": "tsx index.ts",
     "dev": "nodemon --exec tsx index.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest --exclude \"**/tests/api/**\"",
+    "test:api": "dotenv -e .env.test -- prisma db push && dotenv -e .env.test -- vitest run --dir tests/api",
+    "test:api:preview": "dotenv -e .env.test -- prisma db push"
   },
   "dependencies": {
     "@prisma/client": "6.19",
@@ -30,8 +34,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
-    "jose": "^6.2.3",
-    "zod": "^4.4.3"
+    "jose": "^6.2.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -39,15 +42,19 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.12.4",
+    "@types/supertest": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "nodemon": "^3.1.11",
     "prisma": "6.19",
     "shared": "^0.2.0",
+    "supertest": "^7.2.2",
     "tsx": "^4.22.3",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.59.4"
+    "typescript-eslint": "^8.59.4",
+    "vitest": "^4.1.7"
   },
   "packageManager": "pnpm@10.32.1"
 }

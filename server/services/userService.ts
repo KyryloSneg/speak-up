@@ -3,15 +3,11 @@ import ApiError from "#errors/ApiError.ts";
 import type { Token, User } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
 import TokenService from "#services/tokenService.ts";
-import type { JWTTokens } from "#types/jwtTokens.ts";
+import type { UserDataWithTokens } from "#types/userDataWithTokens.ts";
+import { PASSWORD_HASH_SALT, TEST_PASSWORD_HASH_SALT } from "#utils/consts.ts";
 import userToJwtPayload from "#utils/userToJwtPayload.ts";
 import { blobToBase64, generateLetterPictureBlob } from "@speak-up/shared";
 import bcrypt from "bcrypt";
-
-interface UserDataWithTokens {
-  tokens: JWTTokens;
-  user: UserDto;
-}
 
 class UserService {
   // just a service's helper
@@ -49,7 +45,12 @@ class UserService {
       );
     }
 
-    const hashPassword = await bcrypt.hash(password, 3);
+    const salt =
+      process.env.NODE_ENV === "test"
+        ? TEST_PASSWORD_HASH_SALT
+        : PASSWORD_HASH_SALT;
+
+    const hashPassword = await bcrypt.hash(password, salt);
 
     const letterPictureBlob = await generateLetterPictureBlob(nickname);
     if (!letterPictureBlob) {

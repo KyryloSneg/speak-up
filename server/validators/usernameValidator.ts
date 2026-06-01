@@ -5,7 +5,7 @@ function usernameValidator(value: unknown): boolean {
   const validationResult = getZodUsernameValidation().safeParse(value);
 
   if (!validationResult.success) {
-    throw ApiError.BadRequest("Invalid username");
+    throw ApiError.UnprocessableEntity("Invalid username");
   }
 
   return true;

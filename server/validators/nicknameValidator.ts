@@ -5,7 +5,7 @@ function nicknameValidator(value: unknown): boolean {
   const validationResult = getZodNicknameValidation().safeParse(value);
 
   if (!validationResult.success) {
-    throw ApiError.BadRequest("Invalid nickname");
+    throw ApiError.UnprocessableEntity("Invalid nickname");
   }
 
   return true;

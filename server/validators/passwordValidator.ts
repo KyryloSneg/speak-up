@@ -5,7 +5,7 @@ function passwordValidator(value: unknown): boolean {
   const validationResult = getZodPasswordValidation().safeParse(value);
 
   if (!validationResult.success) {
-    throw ApiError.BadRequest("Invalid password");
+    throw ApiError.UnprocessableEntity("Invalid password");
   }
 
   return true;

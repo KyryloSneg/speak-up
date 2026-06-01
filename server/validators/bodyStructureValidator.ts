@@ -13,7 +13,7 @@ function bodyStructureValidator(
     return value !== undefined;
   }
 
-  const resultValidation = body(fields).custom(validator);
+  const validation = body(fields).custom(validator);
   const bodyStructureErrorMiddleware: APIRequestHandler = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -27,7 +27,7 @@ function bodyStructureValidator(
     next();
   };
 
-  return [resultValidation, bodyStructureErrorMiddleware];
+  return [validation, bodyStructureErrorMiddleware];
 }
 
 export default bodyStructureValidator;

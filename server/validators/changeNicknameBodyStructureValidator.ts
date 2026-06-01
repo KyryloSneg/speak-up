@@ -1,8 +1,8 @@
 import type { BodyStructureValidatorResult } from "#validators/bodyStructureValidator.ts";
 import bodyStructureValidator from "#validators/bodyStructureValidator.ts";
 
-function changeNicknameBodyStructureValidation(): BodyStructureValidatorResult {
+function changeNicknameBodyStructureValidator(): BodyStructureValidatorResult {
   return bodyStructureValidator(["nickname"]);
 }
 
-export default changeNicknameBodyStructureValidation;
+export default changeNicknameBodyStructureValidator;
