@@ -1,12 +1,16 @@
 import mapToUserDto, { type UserDto } from "#dtos/userDto.ts";
 import ApiError from "#errors/ApiError.ts";
-import type { Token, User } from "#generated/prisma/client.ts";
+import { type Token, type User } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
 import TokenService from "#services/tokenService.ts";
 import type { UserDataWithTokens } from "#types/userDataWithTokens.ts";
 import { PASSWORD_HASH_SALT, TEST_PASSWORD_HASH_SALT } from "#utils/consts.ts";
 import userToJwtPayload from "#utils/userToJwtPayload.ts";
-import { blobToBase64, generateLetterPictureBlob } from "@speak-up/shared";
+import {
+  blobToBase64,
+  generateLetterPictureBlob,
+  getNameInitials,
+} from "@speak-up/shared";
 import bcrypt from "bcrypt";
 
 class UserService {
@@ -26,6 +30,21 @@ class UserService {
     };
 
     return userData;
+  }
+
+  static async generateLetterPictureWithError(
+    nickname: string,
+  ): Promise<string> {
+    const letterPictureBlob = await generateLetterPictureBlob(nickname);
+    if (!letterPictureBlob) {
+      // let the error middleware pick it up as 500
+      throw new Error("Letter picture generation is failed");
+    }
+
+    // save pictures as a stinky Base64 string because i don't want
+    // to spend time on setting up s3 (this project is not about this)
+    const letterPicture = await blobToBase64(letterPictureBlob);
+    return letterPicture;
   }
 
   static async registration(
@@ -51,18 +70,10 @@ class UserService {
         : PASSWORD_HASH_SALT;
 
     const hashPassword = await bcrypt.hash(password, salt);
+    const letterPicture =
+      await UserService.generateLetterPictureWithError(nickname);
 
-    const letterPictureBlob = await generateLetterPictureBlob(nickname);
-    if (!letterPictureBlob) {
-      // let the error middleware pick it up as 500
-      throw new Error("Letter picture generation is failed");
-    }
-
-    // save pictures as a stinky Base64 string because i don't want
-    // to spend time on setting up s3 (this project is not about this)
-    const letterPicture = await blobToBase64(letterPictureBlob);
     const picture = letterPicture;
-
     const user = await prisma.user.create({
       data: {
         username,
@@ -119,12 +130,32 @@ class UserService {
     nickname: string,
     userId: string,
   ): Promise<UserDto> {
-    const user = await prisma.user.update({
+    const oldUser = await prisma.user.findUnique({
       where: { id: userId },
-      data: { nickname },
+      select: { nickname: true },
     });
 
-    const userDto = mapToUserDto(user);
+    if (!oldUser) {
+      throw ApiError.BadRequest("Such a user doesn't exist");
+    }
+
+    const oldInitials = getNameInitials(oldUser.nickname);
+    const newInitials = getNameInitials(nickname);
+
+    const haveInitialsBeenChanged = newInitials !== oldInitials;
+    const newPictureUrl =
+      await UserService.generateLetterPictureWithError(nickname);
+
+    const newUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        nickname,
+        picture: haveInitialsBeenChanged ? newPictureUrl : undefined,
+        letterPicture: haveInitialsBeenChanged ? newPictureUrl : undefined,
+      },
+    });
+
+    const userDto = mapToUserDto(newUser);
     return userDto;
   }
 
