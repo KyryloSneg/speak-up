@@ -16,6 +16,14 @@ export default defineConfigWithVueTs(
     files: ["**/*.{vue,ts,mts,tsx}"],
   },
 
+  {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+
   globalIgnores(["**/dist/**", "**/dist-ssr/**", "**/coverage/**"]),
 
   ...pluginVue.configs["flat/essential"],
