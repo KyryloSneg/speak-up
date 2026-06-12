@@ -14,9 +14,7 @@ function apiErrorMiddleware(
     });
   }
 
-  return res
-    .status(500)
-    .json({ message: "Unexpected error. Try a bit later." });
+  return res.status(500).json({ message: ApiError.UnexpectedError().message });
 }
 
 export default apiErrorMiddleware;

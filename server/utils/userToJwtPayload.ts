@@ -1,4 +1,4 @@
-import type { UserDto } from "#dtos/userDto.ts";
+import type { UserDto } from "@speak-up/shared";
 import type { User } from "#generated/prisma/client.ts";
 import type { JWTPayload, JWTPayloadRaw } from "#types/jwtPayload.ts";
 

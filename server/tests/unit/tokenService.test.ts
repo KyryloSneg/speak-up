@@ -15,15 +15,8 @@ vi.mock("#services/prisma.ts", () => ({
 }));
 
 describe("tokenService", () => {
-  // randomly generated tokens
-  const accessToken = "o1OuQXklF+0xlQ4ZoKXeOFp4I1ya4XqYK3NEZkd9AGw=";
-  const refreshToken = "26ll8WZTwQjUC+8xGNsyDxqIVKgAvIVd02ljJrjvtpo=";
-
   beforeEach(() => {
-    vi.clearAllMocks();
-
-    vi.stubEnv("JWT_ACCESS_SECRET", accessToken);
-    vi.stubEnv("JWT_REFRESH_SECRET", refreshToken);
+    vi.resetAllMocks();
   });
 
   describe("jwt", () => {
@@ -42,8 +35,8 @@ describe("tokenService", () => {
         tokens.refreshToken,
       );
 
-      expect(payloadFromAccessToken).toEqual(payload);
-      expect(payloadFromRefreshToken).toEqual(payload);
+      expect(payloadFromAccessToken).toStrictEqual(payload);
+      expect(payloadFromRefreshToken).toStrictEqual(payload);
     });
 
     describe("validation error fallback", () => {
@@ -81,7 +74,7 @@ describe("tokenService", () => {
         update: { refreshToken: mockToken.refreshToken },
       });
 
-      expect(token).toEqual(mockToken);
+      expect(token).toStrictEqual(mockToken);
     });
 
     it("should successfully remove a token from DB with correct options", async () => {
@@ -92,7 +85,7 @@ describe("tokenService", () => {
         where: { refreshToken: mockToken.refreshToken },
       });
 
-      expect(token).toEqual(mockToken);
+      expect(token).toStrictEqual(mockToken);
     });
 
     it("should fallback to null if error has occured during removing a token from DB", async () => {
@@ -108,7 +101,7 @@ describe("tokenService", () => {
       vi.mocked(prisma.token.findUnique).mockResolvedValue(mockToken);
 
       const token = await TokenService.findToken(mockToken.refreshToken);
-      expect(token).toEqual(mockToken);
+      expect(token).toStrictEqual(mockToken);
     });
 
     it("should return null if couldn't find a token in DB", async () => {

@@ -1,4 +1,4 @@
-import type { UserDto } from "#dtos/userDto.ts";
+import type { UserDto } from "@speak-up/shared";
 import mapToUserDto from "#dtos/userDto.ts";
 import type { User } from "#generated/prisma/client.ts";
 import { describe, expect, it } from "vitest";
@@ -26,6 +26,6 @@ describe("mapToUserDto", () => {
 
     const dto = mapToUserDto(mockUserWithRedundantFields);
 
-    expect(dto).toEqual(dtoFields);
+    expect(dto).toStrictEqual(dtoFields);
   });
 });

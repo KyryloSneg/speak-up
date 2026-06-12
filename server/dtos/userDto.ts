@@ -1,14 +1,7 @@
 import type { User } from "#generated/prisma/client.ts";
+import type { UserDto } from "@speak-up/shared";
 
-export type UserDto = {
-  id: User["id"];
-  username: User["username"];
-  nickname: User["nickname"];
-  picture: User["picture"];
-  letterPicture: User["letterPicture"];
-};
-
-function mapToUserDto(user: User): UserDto {
+function mapToUserDto(user: User | UserDto): UserDto {
   const userDto: UserDto = {
     id: user.id,
     username: user.username,

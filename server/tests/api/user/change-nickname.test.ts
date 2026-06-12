@@ -1,11 +1,13 @@
-import mapToUserDto, { type UserDto } from "#dtos/userDto.ts";
+import mapToUserDto from "#dtos/userDto.ts";
+import ApiError from "#errors/ApiError.ts";
 import type { User } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
-import createAuthUser from "#tests/api/utils/createAuthUser.ts";
 import testPrivateRoute from "#tests/api/utils/testPrivateRoute.ts";
+import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
 import app from "#utils/app.ts";
+import { type UserDto } from "@speak-up/shared";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -40,9 +42,9 @@ describe("/api/change-nickname PATCH route", () => {
         .send({ nickname: newNickname });
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(mapToUserDto(res.body));
+      expect(res.body).toStrictEqual(mapToUserDto(res.body));
 
-      expect(excludePictureFields(res.body)).toEqual({
+      expect(excludePictureFields(res.body)).toStrictEqual({
         ...excludePictureFields(mapToUserDto(user)),
         nickname: newNickname,
       });
@@ -83,7 +85,7 @@ describe("/api/change-nickname PATCH route", () => {
         .send({ nickname: newNickname });
 
       expect(res.status).toBe(200);
-      expect(excludePictureFields(res.body)).toEqual({
+      expect(excludePictureFields(res.body)).toStrictEqual({
         ...excludePictureFields(mapToUserDto(user)),
         nickname: newNickname,
       });
@@ -122,7 +124,17 @@ describe("/api/change-nickname PATCH route", () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBeTypeOf("string");
+      expect(res.body).toStrictEqual({
+        message: "Validation error",
+        body: [
+          {
+            type: "field",
+            msg: "Invalid value",
+            path: "nickname",
+            location: "body",
+          },
+        ],
+      });
     });
 
     it("should return a 400 response if a redundant field is provided", async () => {
@@ -152,7 +164,18 @@ describe("/api/change-nickname PATCH route", () => {
         .send({ nickname: newNickname });
 
       expect(res.status).toBe(422);
-      expect(res.body.message).toBeTypeOf("string");
+      expect(res.body).toStrictEqual({
+        message: "Validation error",
+        body: [
+          {
+            type: "field",
+            value: newNickname,
+            msg: "Invalid nickname",
+            path: "nickname",
+            location: "body",
+          },
+        ],
+      });
     });
 
     it("should return a 500 response on an unexpected error", async () => {
@@ -171,7 +194,9 @@ describe("/api/change-nickname PATCH route", () => {
         .send({ nickname: newNickname });
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBeTypeOf("string");
+      expect(res.body).toStrictEqual({
+        message: ApiError.UnexpectedError().message,
+      });
     });
   });
 });

@@ -25,6 +25,9 @@ class ApiError extends Error {
   static UnprocessableEntity(message: string, body: ErrorBody = null) {
     return new ApiError(422, message, { body });
   }
+  static UnexpectedError() {
+    return new ApiError(500, "Unexpected error. Try a bit later.");
+  }
 }
 
 export default ApiError;

@@ -5,7 +5,7 @@ import { getSymmetricSecret } from "@speak-up/shared";
 import type { NextFunction, Response } from "express";
 import { jwtVerify } from "jose";
 
-async function authMiddleware(
+async function apiAuthMiddleware(
   req: OptionalAuthRequest,
   res: Response,
   next: NextFunction,
@@ -41,4 +41,4 @@ async function authMiddleware(
   }
 }
 
-export default authMiddleware;
+export default apiAuthMiddleware;

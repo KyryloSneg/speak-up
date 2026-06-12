@@ -1,4 +1,4 @@
-import mapToUserDto, { type UserDto } from "#dtos/userDto.ts";
+import mapToUserDto from "#dtos/userDto.ts";
 import ApiError from "#errors/ApiError.ts";
 import { type Token, type User } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
@@ -10,6 +10,7 @@ import {
   blobToBase64,
   generateLetterPictureBlob,
   getNameInitials,
+  type UserDto,
 } from "@speak-up/shared";
 import bcrypt from "bcrypt";
 
