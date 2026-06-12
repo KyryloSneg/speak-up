@@ -6,10 +6,13 @@ import getResCookieValue from "#tests/api/utils/getResCookieValue.ts";
 import testResSecureCookie from "#tests/api/utils/testResSecureCookie.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
 import app from "#utils/app.ts";
+import { ApiRoutes } from "@speak-up/shared";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("/api/register POST route", () => {
+const route = ApiRoutes.REGISTER;
+
+describe(`${route} POST route`, () => {
   setupDbCleanup();
 
   afterEach(() => {
@@ -31,7 +34,7 @@ describe("/api/register POST route", () => {
 
     it("should successfully create a user with a unique username and hashed password, set refresh token and return user dto", async () => {
       const credentials = getUniqueUserCredentials();
-      const res = await request(app).post("/api/register").send(credentials);
+      const res = await request(app).post(route).send(credentials);
 
       expect(res.status).toBe(201);
 
@@ -71,12 +74,10 @@ describe("/api/register POST route", () => {
     it("should return a 400 response when trying to create a user with the duplicate username", async () => {
       const credentials = getUniqueUserCredentials();
 
-      const res = await request(app).post("/api/register").send(credentials);
+      const res = await request(app).post(route).send(credentials);
       expect(res.status).toBe(201);
 
-      const secondRes = await request(app)
-        .post("/api/register")
-        .send(credentials);
+      const secondRes = await request(app).post(route).send(credentials);
 
       expect(secondRes.status).toBe(400);
       expect(secondRes.body.message).toBeTypeOf("string");
@@ -88,7 +89,7 @@ describe("/api/register POST route", () => {
       );
 
       const credentials = getUniqueUserCredentials();
-      const res = await request(app).post("/api/register").send(credentials);
+      const res = await request(app).post(route).send(credentials);
 
       expect(res.status).toBe(500);
       expect(res.body).toStrictEqual({
@@ -104,19 +105,17 @@ describe("/api/register POST route", () => {
         password: "Pass#12?",
       };
 
-      const res = await request(app).post("/api/register").send(credentials);
+      const res = await request(app).post(route).send(credentials);
 
       expect(res.status).toBe(400);
       expect(res.body).toStrictEqual({
         message: "Validation error",
-        body: [
-          {
-            type: "field",
-            msg: "Invalid value",
-            path: "nickname",
-            location: "body",
-          },
-        ],
+        body: expect.arrayContaining([
+          expect.objectContaining({
+            path: ["nickname"],
+            message: "Invalid nickname",
+          }),
+        ]),
       });
     });
 
@@ -128,7 +127,7 @@ describe("/api/register POST route", () => {
         extra: "extra",
       };
 
-      const res = await request(app).post("/api/register").send(credentials);
+      const res = await request(app).post(route).send(credentials);
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBeTypeOf("string");
@@ -141,36 +140,27 @@ describe("/api/register POST route", () => {
         password: "pass#12?",
       };
 
-      const res = await request(app).post("/api/register").send(credentials);
+      const res = await request(app).post(route).send(credentials);
 
       expect(res.status).toBe(422);
       expect(res.body.message).toBeTypeOf("string");
 
       expect(res.body).toStrictEqual({
         message: "Validation error",
-        body: [
-          {
-            type: "field",
-            value: credentials.nickname,
-            msg: "Invalid nickname",
-            path: "nickname",
-            location: "body",
-          },
-          {
-            type: "field",
-            value: credentials.username,
-            msg: "Invalid username",
-            path: "username",
-            location: "body",
-          },
-          {
-            type: "field",
-            value: credentials.password,
-            msg: "Invalid password",
-            path: "password",
-            location: "body",
-          },
-        ],
+        body: expect.arrayContaining([
+          expect.objectContaining({
+            path: ["nickname"],
+            message: "Required",
+          }),
+          expect.objectContaining({
+            path: ["username"],
+            message: "Username is too short",
+          }),
+          expect.objectContaining({
+            path: ["password"],
+            message: "Must contain at least one uppercase letter",
+          }),
+        ]),
       });
     });
   });

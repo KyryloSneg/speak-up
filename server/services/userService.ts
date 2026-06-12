@@ -3,13 +3,13 @@ import ApiError from "#errors/ApiError.ts";
 import { type Token, type User } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
 import TokenService from "#services/tokenService.ts";
-import type { UserDataWithTokens } from "#types/userDataWithTokens.ts";
 import { PASSWORD_HASH_SALT, TEST_PASSWORD_HASH_SALT } from "#utils/consts.ts";
 import userToJwtPayload from "#utils/userToJwtPayload.ts";
 import {
   blobToBase64,
   generateLetterPictureBlob,
   getNameInitials,
+  type UserDataWithTokens,
   type UserDto,
 } from "@speak-up/shared";
 import bcrypt from "bcrypt";
@@ -48,7 +48,7 @@ class UserService {
     return letterPicture;
   }
 
-  static async registration(
+  static async register(
     nickname: string,
     username: string,
     password: string,

@@ -1,44 +1,35 @@
 import UserController from "#controllers/userController.ts";
 import authMiddleware from "#middlewares/api/apiAuthMiddleware.ts";
-import changeNicknameBodyStructureValidator from "#validators/changeNicknameBodyStructureValidator.ts";
-import nicknameValidator from "#validators/nicknameValidator.ts";
-import passwordValidator from "#validators/passwordValidator.ts";
-import registerBodyStructureValidator from "#validators/registerBodyStructureValidator.ts";
-import signInBodyStructureValidator from "#validators/signInBodyStructureValidator.ts";
-import usernameValidator from "#validators/usernameValidator.ts";
+import changeNicknameBodyValidator from "#validators/changeNicknameBodyValidator.ts";
+import registerBodyValidator from "#validators/registerBodyValidator.ts";
+import signInBodyValidator from "#validators/signInBodyValidator.ts";
+import { NoPrefixApiRoutes } from "@speak-up/shared";
 import { Router } from "express";
-import { body } from "express-validator";
 
 const router = Router();
 
 router.post(
-  "/register",
-  ...registerBodyStructureValidator(),
-  body("nickname").custom(nicknameValidator),
-  body("username").custom(usernameValidator),
-  body("password").custom(passwordValidator),
-  UserController.registration,
+  NoPrefixApiRoutes.REGISTER,
+  registerBodyValidator(),
+  UserController.register,
 );
 
 router.post(
-  "/sign-in",
-  ...signInBodyStructureValidator(),
-  body("username").custom(usernameValidator),
-  body("password").custom(passwordValidator),
+  NoPrefixApiRoutes.SIGN_IN,
+  signInBodyValidator(),
   UserController.login,
 );
 
-router.post("/logout", UserController.logout);
+router.post(NoPrefixApiRoutes.LOGOUT, UserController.logout);
 router.patch(
-  "/change-nickname",
+  NoPrefixApiRoutes.CHANGE_NICKNAME,
   authMiddleware,
-  ...changeNicknameBodyStructureValidator(),
-  body("nickname").custom(nicknameValidator),
+  changeNicknameBodyValidator(),
   // @ts-expect-error: We are 100% sure that the incoming request
   //                   will be AuthRequest type after auth middleware
   UserController.changeNickname,
 );
 
-router.get("/refresh", UserController.refresh);
+router.get(NoPrefixApiRoutes.REFRESH, UserController.refresh);
 
 export default router;

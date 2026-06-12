@@ -1,13 +1,12 @@
 import type { Token } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
 import type { JWTPayload } from "#types/jwtPayload.ts";
-import type { JWTTokens } from "#types/jwtTokens.ts";
 import {
   ACCESS_TOKEN_EXPIRATION_TIME_MINUTES,
   REFRESH_TOKEN_EXPIRATION_TIME_DAYS,
 } from "#utils/consts.ts";
 import filterJwtPayload from "#utils/filterJwtPayload.ts";
-import { getSymmetricSecret } from "@speak-up/shared";
+import { getSymmetricSecret, type JWTTokens } from "@speak-up/shared";
 import { jwtVerify, SignJWT } from "jose";
 
 class TokenService {

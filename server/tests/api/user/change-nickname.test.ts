@@ -7,14 +7,16 @@ import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
 import app from "#utils/app.ts";
-import { type UserDto } from "@speak-up/shared";
+import { ApiRoutes, type UserDto } from "@speak-up/shared";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("/api/change-nickname PATCH route", () => {
+const route = ApiRoutes.CHANGE_NICKNAME;
+
+describe(`${route} PATCH route`, () => {
   setupDbCleanup();
 
-  testPrivateRoute("/api/change-nickname", "PATCH", {
+  testPrivateRoute(route, "PATCH", {
     strategy: "access-only",
   });
 
@@ -37,7 +39,7 @@ describe("/api/change-nickname PATCH route", () => {
 
       const newNickname = `${user.nickname} 123`;
       const res = await request(app)
-        .patch("/api/change-nickname")
+        .patch(route)
         .set("Authorization", authorizationHeader)
         .send({ nickname: newNickname });
 
@@ -80,7 +82,7 @@ describe("/api/change-nickname PATCH route", () => {
 
       const newNickname = `${user.nickname}_123`;
       const res = await request(app)
-        .patch("/api/change-nickname")
+        .patch(route)
         .set("Authorization", authorizationHeader)
         .send({ nickname: newNickname });
 
@@ -119,21 +121,19 @@ describe("/api/change-nickname PATCH route", () => {
       );
 
       const res = await request(app)
-        .patch("/api/change-nickname")
+        .patch(route)
         .set("Authorization", authorizationHeader)
         .send({});
 
       expect(res.status).toBe(400);
       expect(res.body).toStrictEqual({
         message: "Validation error",
-        body: [
-          {
-            type: "field",
-            msg: "Invalid value",
-            path: "nickname",
-            location: "body",
-          },
-        ],
+        body: expect.arrayContaining([
+          expect.objectContaining({
+            path: ["nickname"],
+            message: "Invalid nickname",
+          }),
+        ]),
       });
     });
 
@@ -144,7 +144,7 @@ describe("/api/change-nickname PATCH route", () => {
 
       const newNickname = `${user.nickname}_123`;
       const res = await request(app)
-        .patch("/api/change-nickname")
+        .patch(route)
         .set("Authorization", authorizationHeader)
         .send({ nickname: newNickname, extra: "extra" });
 
@@ -159,22 +159,19 @@ describe("/api/change-nickname PATCH route", () => {
 
       const newNickname = "";
       const res = await request(app)
-        .patch("/api/change-nickname")
+        .patch(route)
         .set("Authorization", authorizationHeader)
         .send({ nickname: newNickname });
 
       expect(res.status).toBe(422);
       expect(res.body).toStrictEqual({
         message: "Validation error",
-        body: [
-          {
-            type: "field",
-            value: newNickname,
-            msg: "Invalid nickname",
-            path: "nickname",
-            location: "body",
-          },
-        ],
+        body: expect.arrayContaining([
+          expect.objectContaining({
+            path: ["nickname"],
+            message: "Required",
+          }),
+        ]),
       });
     });
 
@@ -189,7 +186,7 @@ describe("/api/change-nickname PATCH route", () => {
 
       const newNickname = `${user.nickname}_123`;
       const res = await request(app)
-        .patch("/api/change-nickname")
+        .patch(route)
         .set("Authorization", authorizationHeader)
         .send({ nickname: newNickname });
 
