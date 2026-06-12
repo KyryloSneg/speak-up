@@ -1,4 +1,4 @@
-import apiErrorMiddleware from "#middlewares/apiErrorMiddleware.ts";
+import apiErrorMiddleware from "#middlewares/api/apiErrorMiddleware.ts";
 import router from "#router/index.ts";
 import cookieParser from "cookie-parser";
 import cors from "cors";

@@ -1,4 +1,5 @@
-import createAuthUser from "#tests/api/utils/createAuthUser.ts";
+import ApiError from "#errors/ApiError.ts";
+import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import app from "#utils/app.ts";
 import {
@@ -30,7 +31,9 @@ function testPrivateRoute(
           const res = await request(app)[supertestMethod](route).send(payload);
 
           expect(res.status).toBe(401);
-          expect(res.body.message).toBeTypeOf("string");
+          expect(res.body).toStrictEqual({
+            message: ApiError.UnauthorizedError().message,
+          });
         });
 
         it("should throw 401 error with a message if an invalid jwt access token with invalid structure is provided", async () => {
@@ -40,7 +43,9 @@ function testPrivateRoute(
             .send(payload);
 
           expect(res.status).toBe(401);
-          expect(res.body.message).toBeTypeOf("string");
+          expect(res.body).toStrictEqual({
+            message: ApiError.UnauthorizedError().message,
+          });
         });
 
         it("should throw 401 error with a message if an invalid jwt access token with valid structure is provided", async () => {
@@ -50,7 +55,9 @@ function testPrivateRoute(
             .send(payload);
 
           expect(res.status).toBe(401);
-          expect(res.body.message).toBeTypeOf("string");
+          expect(res.body).toStrictEqual({
+            message: ApiError.UnauthorizedError().message,
+          });
         });
       });
     }
@@ -66,7 +73,9 @@ function testPrivateRoute(
             .send(payload);
 
           expect(res.status).toBe(401);
-          expect(res.body.message).toBeTypeOf("string");
+          expect(res.body).toStrictEqual({
+            message: ApiError.UnauthorizedError().message,
+          });
         });
       }
 
@@ -79,7 +88,9 @@ function testPrivateRoute(
             .send(payload);
 
           expect(res.status).toBe(401);
-          expect(res.body.message).toBeTypeOf("string");
+          expect(res.body).toStrictEqual({
+            message: ApiError.UnauthorizedError().message,
+          });
         });
 
         it("should throw 401 error with a message if a valid jwt access token with valid structure is provided with an invalid refresh token", async () => {
@@ -93,7 +104,9 @@ function testPrivateRoute(
             .send(payload);
 
           expect(res.status).toBe(401);
-          expect(res.body.message).toBeTypeOf("string");
+          expect(res.body).toStrictEqual({
+            message: ApiError.UnauthorizedError().message,
+          });
         });
       }
 
@@ -108,7 +121,9 @@ function testPrivateRoute(
             .send(payload);
 
           expect(res.status).toBe(401);
-          expect(res.body.message).toBeTypeOf("string");
+          expect(res.body).toStrictEqual({
+            message: ApiError.UnauthorizedError().message,
+          });
         });
       }
 
@@ -139,7 +154,9 @@ function testPrivateRoute(
               .send(payload);
 
             expect(res.status).toBe(401);
-            expect(res.body.message).toBeTypeOf("string");
+            expect(res.body).toStrictEqual({
+              message: ApiError.UnauthorizedError().message,
+            });
           });
         }
 
@@ -163,7 +180,9 @@ function testPrivateRoute(
               .send(payload);
 
             expect(res.status).toBe(401);
-            expect(res.body.message).toBeTypeOf("string");
+            expect(res.body).toStrictEqual({
+              message: ApiError.UnauthorizedError().message,
+            });
           });
         }
       });

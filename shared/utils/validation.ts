@@ -1,4 +1,4 @@
-import z from "zod";
+import z, { type ZodType } from "zod";
 
 export function getZodNicknameValidation() {
   return z
@@ -41,3 +41,79 @@ export function getZodPasswordValidation() {
       })
   );
 }
+
+export function getZodTextMessageContentPartValueValidation() {
+  return z
+    .string("Invalid message")
+    .trim()
+    .min(1, "Required")
+    .max(1000, "Message is too long");
+}
+
+export function getZodMessageContentPartValidation() {
+  return z
+    .object({
+      type: z.literal("text"),
+      value: getZodTextMessageContentPartValueValidation(),
+    })
+    .strict();
+}
+
+export function getZodMessageContentValidation() {
+  return z.array(getZodMessageContentPartValidation()).min(1, "Required");
+}
+
+export function getZodRoomMaxMembersValidation() {
+  return z.number().min(1).max(100);
+}
+
+export function getZodMediaConfigValidation() {
+  return z.object({ audio: z.boolean(), video: z.boolean() }).strict();
+}
+
+export function getZodCreateRoomDataValidation() {
+  return z.object({ maxMembers: getZodRoomMaxMembersValidation() }).strict();
+}
+
+export function getZodJoinRoomDataValidation() {
+  return z.object({ id: z.string() }).strict();
+}
+
+export function getZodSendMediaConfigDataValidation() {
+  return z.object({ config: getZodMediaConfigValidation() }).strict();
+}
+
+export function getZodSendIceDataValidation() {
+  return z
+    .object({
+      userId: z.string(),
+      ice: z.object({
+        candidate: z.string(),
+        sdpMid: z.string().nullable().optional(),
+        sdpMLineIndex: z.number().nullable().optional(),
+      }),
+    })
+    .strict();
+}
+
+export function getZodSendSDPDataValidation() {
+  return z
+    .object({
+      userId: z.string(),
+      sdp: z.string(),
+      type: z.union([z.literal("offer"), z.literal("answer")]),
+    })
+    .strict();
+}
+
+export function getZodRemoveUserDataValidation() {
+  return z.object({ userId: z.string() }).strict();
+}
+
+export function getZodSendMessageDataValidation() {
+  return z.object({ content: getZodMessageContentValidation() }).strict();
+}
+
+export type SchemaOfZodValidationFn<Fn extends () => ZodType> = z.infer<
+  ReturnType<Fn>
+>;

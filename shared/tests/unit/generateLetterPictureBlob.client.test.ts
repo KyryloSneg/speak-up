@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LETTER_PICTURE_SIZE } from "../../utils/consts.ts";
 import generateLetterPictureBlob from "../../utils/generateLetterPictureBlob.ts";
 import * as getNameInitialsModule from "../../utils/getNameInitials.ts";
@@ -11,7 +11,10 @@ vi.mock("../../utils/generateRandomHEX.ts", () => ({
 
 describe("client generateLetterPictureBlob", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+  });
+
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 

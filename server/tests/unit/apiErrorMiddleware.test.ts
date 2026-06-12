@@ -1,5 +1,5 @@
 import ApiError from "#errors/ApiError.ts";
-import apiErrorMiddleware from "#middlewares/apiErrorMiddleware.ts";
+import apiErrorMiddleware from "#middlewares/api/apiErrorMiddleware.ts";
 import type { NextFunction, Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 

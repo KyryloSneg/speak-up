@@ -1,4 +1,5 @@
 import mapToUserDto from "#dtos/userDto.ts";
+import ApiError from "#errors/ApiError.ts";
 import type { User } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
 import getResCookieValue from "#tests/api/utils/getResCookieValue.ts";
@@ -6,10 +7,14 @@ import testResSecureCookie from "#tests/api/utils/testResSecureCookie.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
 import app from "#utils/app.ts";
 import request from "supertest";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 describe("/api/register POST route", () => {
   setupDbCleanup();
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   describe("valid user credentials", () => {
     function getUniqueUserCredentials(): {
@@ -41,7 +46,7 @@ describe("/api/register POST route", () => {
       expect(res.body.tokens).toHaveProperty("accessToken");
       expect(res.body.tokens).toHaveProperty("refreshToken");
 
-      expect(res.body.user).toEqual(mapToUserDto(res.body.user));
+      expect(res.body.user).toStrictEqual(mapToUserDto(res.body.user));
 
       expect(res.body.user.username).toBe(credentials.username);
       expect(res.body.user.nickname).toBe(credentials.nickname);
@@ -52,7 +57,7 @@ describe("/api/register POST route", () => {
 
       expect(dbUser).not.toBeNull();
       expect(dbUser?.password).not.toBe(credentials.password);
-      expect(mapToUserDto(dbUser!)).toEqual(res.body.user);
+      expect(mapToUserDto(dbUser!)).toStrictEqual(res.body.user);
 
       const dbToken = await prisma.token.findUnique({
         where: { refreshToken: res.body.tokens.refreshToken },
@@ -86,9 +91,9 @@ describe("/api/register POST route", () => {
       const res = await request(app).post("/api/register").send(credentials);
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBeTypeOf("string");
-
-      vi.restoreAllMocks();
+      expect(res.body).toStrictEqual({
+        message: ApiError.UnexpectedError().message,
+      });
     });
   });
 
@@ -102,7 +107,17 @@ describe("/api/register POST route", () => {
       const res = await request(app).post("/api/register").send(credentials);
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBeTypeOf("string");
+      expect(res.body).toStrictEqual({
+        message: "Validation error",
+        body: [
+          {
+            type: "field",
+            msg: "Invalid value",
+            path: "nickname",
+            location: "body",
+          },
+        ],
+      });
     });
 
     it("should return a 400 response when redundant credentials are sent", async () => {
@@ -130,6 +145,33 @@ describe("/api/register POST route", () => {
 
       expect(res.status).toBe(422);
       expect(res.body.message).toBeTypeOf("string");
+
+      expect(res.body).toStrictEqual({
+        message: "Validation error",
+        body: [
+          {
+            type: "field",
+            value: credentials.nickname,
+            msg: "Invalid nickname",
+            path: "nickname",
+            location: "body",
+          },
+          {
+            type: "field",
+            value: credentials.username,
+            msg: "Invalid username",
+            path: "username",
+            location: "body",
+          },
+          {
+            type: "field",
+            value: credentials.password,
+            msg: "Invalid password",
+            path: "password",
+            location: "body",
+          },
+        ],
+      });
     });
   });
 });

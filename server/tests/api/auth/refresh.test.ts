@@ -1,4 +1,4 @@
-import createAuthUser from "#tests/api/utils/createAuthUser.ts";
+import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getResCookieValue from "#tests/api/utils/getResCookieValue.ts";
 import testPrivateRoute from "#tests/api/utils/testPrivateRoute.ts";
 import testResSecureCookie from "#tests/api/utils/testResSecureCookie.ts";

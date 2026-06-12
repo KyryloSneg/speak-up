@@ -11,11 +11,11 @@ describe("filterJwtPayload", () => {
       junk: "junk",
     } as any);
 
-    expect(filteredPayload).toEqual(mockPayload);
+    expect(filteredPayload).toStrictEqual(mockPayload);
   });
 
   it("should successfully leave clean jwt payload as is", () => {
     const filteredPayload = filterJwtPayload(mockPayload);
-    expect(filteredPayload).toEqual(mockPayload);
+    expect(filteredPayload).toStrictEqual(mockPayload);
   });
 });

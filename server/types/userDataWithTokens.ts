@@ -1,4 +1,4 @@
-import type { UserDto } from "#dtos/userDto.ts";
+import type { UserDto } from "@speak-up/shared";
 import type { JWTTokens } from "#types/jwtTokens.ts";
 
 export interface UserDataWithTokens {

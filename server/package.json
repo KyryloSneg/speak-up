@@ -5,9 +5,11 @@
   "type": "module",
   "main": "./index.ts",
   "imports": {
+    "#cleanup/*": "./cleanup/*",
     "#controllers/*": "./controllers/*",
     "#dtos/*": "./dtos/*",
     "#errors/*": "./errors/*",
+    "#events/*": "./events/*",
     "#generated/*": "./generated/*",
     "#middlewares/*": "./middlewares/*",
     "#router/*": "./router/*",
@@ -21,9 +23,10 @@
     "start": "tsx index.ts",
     "dev": "nodemon --exec tsx index.ts",
     "lint": "eslint .",
-    "test": "vitest --exclude \"**/tests/api/**\"",
+    "test:unit": "dotenv -e .env.test -- vitest run --dir tests/unit",
     "test:api": "dotenv -e .env.test -- prisma db push && dotenv -e .env.test -- vitest run --dir tests/api",
-    "test:api:preview": "dotenv -e .env.test -- prisma db push"
+    "test:api:preview": "dotenv -e .env.test -- prisma db push",
+    "test:socket": "dotenv -e .env.test -- vitest run --dir tests/socket"
   },
   "dependencies": {
     "@prisma/client": "6.19",
@@ -34,7 +37,9 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
-    "jose": "^6.2.3"
+    "jose": "^6.2.3",
+    "nanoid": "^5.1.11",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -50,6 +55,7 @@
     "nodemon": "^3.1.11",
     "prisma": "6.19",
     "shared": "^0.2.0",
+    "socket.io-client": "^4.8.3",
     "supertest": "^7.2.2",
     "tsx": "^4.22.3",
     "typescript": "~6.0.3",

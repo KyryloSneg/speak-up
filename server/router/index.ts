@@ -1,5 +1,5 @@
 import UserController from "#controllers/userController.ts";
-import authMiddleware from "#middlewares/authMiddleware.ts";
+import authMiddleware from "#middlewares/api/apiAuthMiddleware.ts";
 import changeNicknameBodyStructureValidator from "#validators/changeNicknameBodyStructureValidator.ts";
 import nicknameValidator from "#validators/nicknameValidator.ts";
 import passwordValidator from "#validators/passwordValidator.ts";
