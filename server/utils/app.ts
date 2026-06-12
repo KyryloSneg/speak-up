@@ -1,5 +1,6 @@
 import apiErrorMiddleware from "#middlewares/api/apiErrorMiddleware.ts";
 import router from "#router/index.ts";
+import { API_ROUTES_PREFIX } from "@speak-up/shared";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { config } from "dotenv";
@@ -18,7 +19,7 @@ app.use(
   }),
 );
 
-app.use("/api", router);
+app.use(API_ROUTES_PREFIX, router);
 app.use(apiErrorMiddleware);
 
 export default app;

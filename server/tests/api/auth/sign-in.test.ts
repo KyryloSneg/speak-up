@@ -7,10 +7,13 @@ import testResSecureCookie from "#tests/api/utils/testResSecureCookie.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
 import app from "#utils/app.ts";
+import { ApiRoutes } from "@speak-up/shared";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("/api/sign-in POST route", () => {
+const route = ApiRoutes.SIGN_IN;
+
+describe(`${route} POST route`, () => {
   setupDbCleanup();
 
   afterEach(() => {
@@ -38,7 +41,7 @@ describe("/api/sign-in POST route", () => {
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(newSystemDate);
 
-      const res = await request(app).post("/api/sign-in").send({
+      const res = await request(app).post(route).send({
         username: credentials.username,
         password: credentials.password,
       });
@@ -86,7 +89,7 @@ describe("/api/sign-in POST route", () => {
   describe("unsuccessful sign in", () => {
     it("should return a 400 response if user with such an username doesn't exist", async () => {
       const res = await request(app)
-        .post("/api/sign-in")
+        .post(route)
         .send({ username: "randomUsername", password: "Pass#12?" });
 
       expect(res.status).toBe(400);
@@ -98,7 +101,7 @@ describe("/api/sign-in POST route", () => {
       await createAuthUser(credentials);
 
       const res = await request(app)
-        .post("/api/sign-in")
+        .post(route)
         .send({
           username: credentials.username,
           password: `${credentials.password}1`,
@@ -113,20 +116,18 @@ describe("/api/sign-in POST route", () => {
       await createAuthUser(credentials);
 
       const res = await request(app)
-        .post("/api/sign-in")
+        .post(route)
         .send({ username: credentials.username });
 
       expect(res.status).toBe(400);
       expect(res.body).toStrictEqual({
         message: "Validation error",
-        body: [
-          {
-            type: "field",
-            msg: "Invalid value",
-            path: "password",
-            location: "body",
-          },
-        ],
+        body: expect.arrayContaining([
+          expect.objectContaining({
+            path: ["password"],
+            message: "Invalid password",
+          }),
+        ]),
       });
     });
 
@@ -134,7 +135,7 @@ describe("/api/sign-in POST route", () => {
       const credentials = getUniqueUserCredentials();
       await createAuthUser(credentials);
 
-      const res = await request(app).post("/api/sign-in").send({
+      const res = await request(app).post(route).send({
         username: credentials.username,
         password: credentials.password,
         extra: "extra",
@@ -146,27 +147,21 @@ describe("/api/sign-in POST route", () => {
 
     it("should return a 422 response on validation error", async () => {
       const credentials = { username: "u", password: "pass#12?" } as const;
-      const res = await request(app).post("/api/sign-in").send(credentials);
+      const res = await request(app).post(route).send(credentials);
 
       expect(res.status).toBe(422);
       expect(res.body).toStrictEqual({
         message: "Validation error",
-        body: [
-          {
-            type: "field",
-            value: credentials.username,
-            msg: "Invalid username",
-            path: "username",
-            location: "body",
-          },
-          {
-            type: "field",
-            value: credentials.password,
-            msg: "Invalid password",
-            path: "password",
-            location: "body",
-          },
-        ],
+        body: expect.arrayContaining([
+          expect.objectContaining({
+            path: ["username"],
+            message: "Username is too short",
+          }),
+          expect.objectContaining({
+            path: ["password"],
+            message: "Must contain at least one uppercase letter",
+          }),
+        ]),
       });
     });
 
@@ -178,7 +173,7 @@ describe("/api/sign-in POST route", () => {
         new Error("Unexpected error"),
       );
 
-      const res = await request(app).post("/api/sign-in").send({
+      const res = await request(app).post(route).send({
         username: credentials.username,
         password: credentials.password,
       });

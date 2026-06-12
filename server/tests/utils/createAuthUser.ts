@@ -1,9 +1,9 @@
 import type { User } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
 import TokenService from "#services/tokenService.ts";
-import type { JWTTokens } from "#types/jwtTokens.ts";
 import { TEST_PASSWORD_HASH_SALT } from "#utils/consts.ts";
 import userToJwtPayload from "#utils/userToJwtPayload.ts";
+import type { JWTTokens } from "@speak-up/shared";
 import bcrypt from "bcrypt";
 
 interface AuthUserData {

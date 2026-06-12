@@ -1,5 +1,7 @@
 import z, { type ZodType } from "zod";
 
+// generic validation
+
 export function getZodNicknameValidation() {
   return z
     .string("Invalid nickname")
@@ -12,6 +14,7 @@ export function getZodUsernameValidation() {
   return z
     .string("Invalid username")
     .trim()
+    .nonempty("Required")
     .min(3, "Username is too short")
     .max(30, "Username is too long");
 }
@@ -19,7 +22,9 @@ export function getZodUsernameValidation() {
 export function getZodPasswordValidation() {
   return (
     z
-      .string()
+      .string("Invalid password")
+      .trim()
+      .min(1, "Required")
       .refine(password => /\p{Lowercase_Letter}/u.test(password), {
         message: "Must contain at least one lowercase letter",
       })
@@ -68,8 +73,44 @@ export function getZodRoomMaxMembersValidation() {
 }
 
 export function getZodMediaConfigValidation() {
-  return z.object({ audio: z.boolean(), video: z.boolean() }).strict();
+  return z
+    .object({
+      audio: z.boolean("Invalid audio"),
+      video: z.boolean("Invalid video"),
+    })
+    .strict();
 }
+
+// REST API
+
+export function getZodRegisterBodyValidation() {
+  return z
+    .object({
+      nickname: getZodNicknameValidation(),
+      username: getZodUsernameValidation(),
+      password: getZodPasswordValidation(),
+    })
+    .strict();
+}
+
+export function getZodSignInBodyValidation() {
+  return z
+    .object({
+      username: getZodUsernameValidation(),
+      password: getZodPasswordValidation(),
+    })
+    .strict();
+}
+
+export function getZodChangeNicknameBodyValidation() {
+  return z
+    .object({
+      nickname: getZodNicknameValidation(),
+    })
+    .strict();
+}
+
+// socket events
 
 export function getZodCreateRoomDataValidation() {
   return z.object({ maxMembers: getZodRoomMaxMembersValidation() }).strict();
@@ -113,6 +154,8 @@ export function getZodRemoveUserDataValidation() {
 export function getZodSendMessageDataValidation() {
   return z.object({ content: getZodMessageContentValidation() }).strict();
 }
+
+// utils
 
 export type SchemaOfZodValidationFn<Fn extends () => ZodType> = z.infer<
   ReturnType<Fn>
