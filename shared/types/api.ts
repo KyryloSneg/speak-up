@@ -18,7 +18,7 @@ export const NoPrefixApiRoutes = {
 } as const;
 
 type ApiRoutesType = {
-  readonly [K in keyof typeof NoPrefixApiRoutes]: `${typeof API_ROUTES_PREFIX}/${(typeof NoPrefixApiRoutes)[K]}`;
+  readonly [K in keyof typeof NoPrefixApiRoutes]: `${typeof API_ROUTES_PREFIX}${(typeof NoPrefixApiRoutes)[K]}`;
 };
 
 export const ApiRoutes = Object.fromEntries(
@@ -50,7 +50,7 @@ interface ErrorResponse<IsValidation> {
     : false;
 }
 
-type AnyErrorResponse = ErrorResponse<false> | ErrorResponse<true>;
+export type AnyErrorResponse = ErrorResponse<false> | ErrorResponse<true>;
 
 export type RegisterResponseBody = UserDataWithTokens | AnyErrorResponse;
 export type SignInResponseBody = UserDataWithTokens | AnyErrorResponse;

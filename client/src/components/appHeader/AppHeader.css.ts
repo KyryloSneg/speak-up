@@ -1,0 +1,12 @@
+import { style } from "@vanilla-extract/css";
+
+export const header = style({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "1rem",
+  width: "100%",
+  height: "max-content",
+  paddingInline: "1rem",
+  paddingBlock: "0.5rem",
+});

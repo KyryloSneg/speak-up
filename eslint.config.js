@@ -1,8 +1,8 @@
 import skipFormatting from "eslint-config-prettier/flat";
 import { defineConfig } from "eslint/config";
-import clientConfig from "./client/eslint.config";
-import serverConfig from "./server/eslint.config";
-import sharedConfig from "./shared/eslint.config";
+import clientConfig from "./client/eslint.config.ts";
+import serverConfig from "./server/eslint.config.ts";
+import sharedConfig from "./shared/eslint.config.ts";
 
 // use some AI-slope for global linting
 
@@ -50,9 +50,9 @@ function scopeConfigs(prefix, configs) {
 }
 
 export default defineConfig([
+  ...scopeConfigs("shared", sharedConfig),
   ...scopeConfigs("client", clientConfig),
   ...scopeConfigs("server", serverConfig),
-  ...scopeConfigs("shared", sharedConfig),
 
   skipFormatting,
 ]);
