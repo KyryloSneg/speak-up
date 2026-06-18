@@ -41,6 +41,7 @@ __screenshots__/
 
 test-results/
 playwright-report/
+/client/playwright/.cache/
 
 /server/generated/prisma
 .env.test

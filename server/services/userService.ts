@@ -60,9 +60,7 @@ class UserService {
     });
 
     if (usernameCandidate) {
-      throw ApiError.BadRequest(
-        `User with such a username ${username} already exists`,
-      );
+      throw ApiError.BadRequest("User with such a username already exists");
     }
 
     const salt =
@@ -100,9 +98,7 @@ class UserService {
     });
 
     if (!usernameCandidate) {
-      throw ApiError.BadRequest(
-        `User with such a username ${username} doesn't exist`,
-      );
+      throw ApiError.BadRequest("User with such a username doesn't exist");
     }
 
     const isPasswordEqual = await bcrypt.compare(

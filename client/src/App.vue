@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { APP_NAME } from "@speak-up/shared";
+import GlobalComponents from "@/components/global/GlobalComponents.vue";
+import { RouterView } from "vue-router";
 </script>
 
 <template>
-  <h1>{{ APP_NAME }}</h1>
+  <RouterView />
+  <GlobalComponents />
 </template>
-
-<style scoped></style>
