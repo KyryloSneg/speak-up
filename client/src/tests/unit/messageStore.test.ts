@@ -1,6 +1,7 @@
 import { useMessageStore } from "@/stores/message";
 import { useRoomStore } from "@/stores/room";
 import mockSocket from "@/tests/unit/utils/mockSocket";
+import { mockUser } from "@/tests/utils/consts";
 import type { Room } from "@/types/room";
 import {
   SocketEvents,
@@ -34,7 +35,9 @@ describe("messageStore", () => {
       const message: Message = {
         id: "id",
         userId: "userId",
+        user: { nickname: mockUser.nickname, picture: mockUser.picture },
         content: [{ type: "text", value: "value" }],
+        createdAt: new Date().toISOString(),
       } as const;
 
       roomStore.room = { id: "id", messages: [] } as unknown as Room;

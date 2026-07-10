@@ -24,7 +24,7 @@ beforeMount(async ({ app, hooksConfig }) => {
   ) {
     pinia.state.value = {
       ...pinia.state.value,
-      ...(typedHooksConfig.initialState || {}),
+      ...typedHooksConfig.initialState,
     };
   }
 });

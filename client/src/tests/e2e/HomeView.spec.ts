@@ -1,8 +1,10 @@
 import mockAuthUser from "@/tests/e2e/services/mockAuthUser";
 import setupE2EFakeBrowserMediaEngine from "@/tests/e2e/services/setupE2EFakeBrowserMediaEngine";
 import { mockRoomId } from "@/tests/e2e/utils/consts";
+import initGlobalPlaywrightStores from "@/tests/e2e/utils/initGlobalPlaywrightStores";
 import { test } from "@/tests/e2e/utils/test";
 import { mockUser } from "@/tests/utils/consts";
+import type { PlaywrightWindow } from "@/types/playwright";
 import { RoutesWithoutParams } from "@/types/routes";
 import { expect } from "@playwright/test";
 import { APP_NAME, SocketResponseEvents } from "@speak-up/shared";
@@ -110,10 +112,13 @@ test.describe("HomeView", () => {
         await expect(cameraButton).toBeDisabled();
       });
 
-      test("should properly toggle microphone and camera 'on' and 'off' states", async ({
+      test("should properly toggle microphone and camera 'on' and 'off' states, including camera's .facingMode state", async ({
         page,
+        isMobile,
       }) => {
+        await initGlobalPlaywrightStores(page);
         await setupE2EFakeBrowserMediaEngine(page);
+
         await page.goto(RoutesWithoutParams.HOME);
 
         const main = page.locator("main").first();
@@ -134,8 +139,43 @@ test.describe("HomeView", () => {
           'button[aria-label*="Toggle camera"]',
         );
 
+        const flipCameraButton = userMediaPreview.locator(
+          'button[aria-label*="Flip camera"]',
+        );
+
         await expect(microphoneButton).toBeVisible();
         await expect(cameraButton).toBeVisible();
+
+        if (isMobile) {
+          await page.evaluate(() => {
+            const playwrightWindow = window as unknown as PlaywrightWindow;
+
+            if (playwrightWindow.__stores__?.media) {
+              playwrightWindow.__stores__.media.devices = [
+                {
+                  deviceId: "deviceId",
+                  groupId: "groupId",
+                  kind: "videoinput",
+                  label: "frontLabel",
+                  toJSON: () => {},
+                },
+                {
+                  deviceId: "deviceId",
+                  groupId: "groupId",
+                  kind: "videoinput",
+                  label: "backLabel",
+                  toJSON: () => {},
+                },
+              ];
+            }
+          });
+
+          await expect(flipCameraButton).toBeVisible();
+          await expect(flipCameraButton).toBeEnabled();
+          await expect(flipCameraButton).toHaveAttribute("data-value", "false");
+        } else {
+          await expect(flipCameraButton).not.toBeVisible();
+        }
 
         const audioMeter = userMediaPreview.locator(
           '[aria-label*="Microphone input level"]',
@@ -146,17 +186,41 @@ test.describe("HomeView", () => {
         await microphoneButton.click();
         await expect(audioMeter).not.toBeVisible();
 
+        if (isMobile) await expect(flipCameraButton).toBeEnabled();
+
         await cameraButton.click();
         await expect(turnedOffCameraLabel).toBeVisible();
+
+        if (isMobile) await expect(flipCameraButton).toBeDisabled();
 
         await microphoneButton.click();
         await expect(audioMeter).toBeVisible();
 
+        if (isMobile) await expect(flipCameraButton).toBeDisabled();
+
         await cameraButton.click();
         await expect(turnedOffCameraLabel).not.toBeVisible();
+
+        if (isMobile) {
+          await expect(flipCameraButton).toBeEnabled();
+
+          await flipCameraButton.click();
+          await expect(flipCameraButton).toHaveAttribute("data-value", "true");
+
+          await expect(audioMeter).toBeVisible();
+          await expect(turnedOffCameraLabel).not.toBeVisible();
+
+          await flipCameraButton.click();
+          await expect(flipCameraButton).toHaveAttribute("data-value", "false");
+
+          await expect(audioMeter).toBeVisible();
+          await expect(turnedOffCameraLabel).not.toBeVisible();
+        }
       });
 
       test("should properly show device selects", async ({ page }) => {
+        // we can test select components by polluting mediaStore.devices first
+        // but it's way too shitty (furthermore, shadcn's select is probably already tested well)
         await setupE2EFakeBrowserMediaEngine(page);
         await page.goto(RoutesWithoutParams.HOME);
 

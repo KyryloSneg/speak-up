@@ -1,4 +1,5 @@
 import type { User } from "#generated/prisma/client.ts";
+import prisma from "#services/prisma.ts";
 import checkIsSocketInRoom from "#tests/socket/utils/checkIsSocketInRoom.ts";
 import getServerSocket from "#tests/socket/utils/getServerSocket.ts";
 import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
@@ -220,11 +221,17 @@ describe("sendMessage event", () => {
 
     const receivedMessageRes = await receivedMessagePromise;
 
-    expect(Object.keys(sendMessageRes?.message || {}).length).toBe(3);
+    expect(Object.keys(sendMessageRes?.message || {}).length).toBe(5);
 
     expect(sendMessageRes?.message.id).toBeTypeOf("string");
     expect(sendMessageRes?.message.userId).toBe(users.first.id);
     expect(sendMessageRes?.message.content).toStrictEqual(validDataObj.content);
+    expect(sendMessageRes?.message.createdAt).toBeTypeOf("string");
+
+    expect(Object.keys(sendMessageRes?.message.user || {}).length).toBe(2);
+
+    expect(sendMessageRes?.message.user.nickname).toBe(users.first.nickname);
+    expect(sendMessageRes?.message.user.picture).toBe(users.first.picture);
 
     expect(receivedMessageRes).toStrictEqual({
       message: sendMessageRes?.message,
@@ -281,6 +288,26 @@ describe("sendMessage event", () => {
     const res = await sendMessagePromise;
     expect(res).toStrictEqual({
       error: SocketResponseErrorMessages.INVALID_DATA,
+    });
+
+    expect(rooms.get(firstRoom)?.messages).toHaveLength(0);
+    expect(rooms.get(secRoom)?.messages).toHaveLength(0);
+  });
+
+  it("should return an error message if user doesn't exist in the DB", async () => {
+    vi.spyOn(prisma.user, "findMany").mockResolvedValue([]);
+
+    const { firstRoom, secRoom, clientSockets } = await setupSockets();
+    const sendMessagePromise = waitFor(
+      clientSockets.first,
+      SocketResponseEvents.SEND_MESSAGE,
+    );
+
+    clientSockets.first.emit(SocketEvents.SEND_MESSAGE, validDataObj);
+
+    const res = await sendMessagePromise;
+    expect(res).toStrictEqual({
+      error: SocketResponseErrorMessages.UNEXPECTED_ERROR,
     });
 
     expect(rooms.get(firstRoom)?.messages).toHaveLength(0);

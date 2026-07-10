@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useMediaStore } from "@/stores/media";
 import { useRoomStore } from "@/stores/room";
 import mockSocket from "@/tests/unit/utils/mockSocket";
+import { mockUser } from "@/tests/utils/consts";
 import type {
   RoomMediaConfig,
   RoomMediaConfigs,
@@ -145,12 +146,22 @@ describe("roomStore", () => {
             {
               id: "id",
               userId: "anotherId",
+              user: {
+                nickname: mockUser.nickname,
+                picture: mockUser.picture,
+              },
               content: [{ type: "text", value: "value" }],
+              createdAt: new Date().toISOString(),
             },
             {
               id: "anotherId",
               userId: "anotherId",
+              user: {
+                nickname: mockUser.nickname,
+                picture: mockUser.picture,
+              },
               content: [{ type: "text", value: "anotherValue" }],
+              createdAt: new Date().toISOString(),
             },
           ];
 

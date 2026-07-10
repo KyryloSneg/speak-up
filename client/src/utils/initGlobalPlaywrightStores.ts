@@ -1,4 +1,5 @@
 import router from "@/router";
+import { useMediaStore } from "@/stores/media";
 import { useRoomStore } from "@/stores/room";
 import { useSocketStore } from "@/stores/socket";
 import type { PlaywrightWindow } from "@/types/playwright";
@@ -16,6 +17,7 @@ function initGlobalPlaywrightStores(): void {
   if (isPlaywrightWindow(typedWindow)) {
     typedWindow.__stores__ = {
       socket: useSocketStore(),
+      media: useMediaStore(),
       room: useRoomStore(),
     };
 

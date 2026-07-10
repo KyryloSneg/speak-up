@@ -110,7 +110,7 @@ export const useMediaStore = defineStore("media", () => {
 
     let errorsAmount = 0;
     const maxErrorsAmount = Object.values(config.value).reduce(
-      (acc, curr) => (!!curr ? acc + 1 : acc),
+      (acc, curr) => (curr ? acc + 1 : acc),
       0,
     );
 

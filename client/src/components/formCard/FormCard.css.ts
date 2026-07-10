@@ -5,8 +5,6 @@ import { recipe } from "@vanilla-extract/recipes";
 export const formCardBreakpointVar = createVar();
 export const formCardMaxWidth = "28rem";
 
-const breakpoint = `(max-width: ${formCardBreakpointVar})`;
-
 export const section = recipe({
   variants: {
     width: {

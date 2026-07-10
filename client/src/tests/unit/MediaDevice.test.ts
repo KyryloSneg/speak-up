@@ -28,7 +28,7 @@ describe("MediaDevice", () => {
 
     mediaDevice.on(MediaDeviceEvents.USER_MEDIA_STREAM, eventListener);
     const startUserMediaResult = mediaDevice.startUserMedia(args[0], {
-      ...(args[1] || {}),
+      ...args[1],
       onError: (...errorArgs) => {
         onError(...errorArgs);
         args[1]?.onError?.(...errorArgs);
@@ -59,7 +59,7 @@ describe("MediaDevice", () => {
 
     mediaDevice.on(MediaDeviceEvents.USER_MEDIA_STREAM, eventListener);
     const startUserMediaResult = mediaDevice.startUserMedia(args[0], {
-      ...(args[1] || {}),
+      ...args[1],
       onError: (...errorArgs) => {
         onError(...errorArgs);
         args[1]?.onError?.(...errorArgs);
