@@ -1,3 +1,4 @@
+import getRoomUsers from "#services/getRoomUsers.ts";
 import type { IO, IOSocket } from "#types/socket.ts";
 import { SocketResponseErrorMessages } from "#types/socketResponseErrorMessages.ts";
 import catchEventHandlerErrorDecorator from "#utils/catchEventHandlerErrorDecorator.ts";
@@ -38,10 +39,21 @@ async function sendMessageEventHandlerCb(
   }
 
   const data = validationResult.data;
+  const users = await getRoomUsers(io, socket.id);
+
+  if (!users.length) {
+    // basically, a server error
+    emitErrorEvent(SocketResponseErrorMessages.UNEXPECTED_ERROR);
+    return;
+  }
+
+  const user = users[0];
   const message: Message = {
     id: nanoid(),
     userId: socket.data.userId,
+    user: { nickname: user.nickname, picture: user.picture },
     content: data.content,
+    createdAt: new Date().toISOString(),
   };
 
   const room = rooms.get(roomId);

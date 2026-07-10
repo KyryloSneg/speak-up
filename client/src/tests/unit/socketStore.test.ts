@@ -69,7 +69,6 @@ describe("socketStore", () => {
         });
 
         it("should properly handle an auth error with seamless logout", async () => {
-          const accessToken = "accessToken" as const;
           vi.mocked($api.auth.refresh).mockResolvedValueOnce({
             data: null,
           } as Awaited<ReturnType<typeof $api.auth.refresh>>);

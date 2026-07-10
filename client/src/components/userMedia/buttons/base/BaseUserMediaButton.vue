@@ -1,5 +1,9 @@
 <template>
-  <UIButton :variant="value ? 'default' : 'destructive'" size="icon-xl">
+  <UIButton
+    :variant="value ? 'default' : 'destructive'"
+    size="icon-xl"
+    :data-value="!!value"
+  >
     <slot />
   </UIButton>
 </template>

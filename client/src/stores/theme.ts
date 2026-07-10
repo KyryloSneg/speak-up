@@ -15,10 +15,9 @@ export const useThemeStore = defineStore("theme", () => {
     if (!["light", "dark"].includes(theme.value)) theme.value = "light";
 
     if (document.startViewTransition) {
-      document.startViewTransition(() => {
-        theme.value = theme.value;
-        document.documentElement.setAttribute("data-theme", theme.value);
-      });
+      document.startViewTransition(() =>
+        document.documentElement.setAttribute("data-theme", theme.value),
+      );
     } else {
       document.documentElement.setAttribute("data-theme", theme.value);
     }
