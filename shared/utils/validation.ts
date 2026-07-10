@@ -73,7 +73,32 @@ export function getZodMessageContentValidation() {
 }
 
 export function getZodRoomMaxMembersValidation() {
-  return z.number().min(1).max(100);
+  const invalidTypeError = "Invalid max members" as const;
+
+  return z
+    .union(
+      [
+        z.number(),
+        z
+          .string()
+          .trim()
+          .transform(value => {
+            const parsed = Number(value);
+            if (isNaN(parsed) || !value) {
+              throw new Error(invalidTypeError);
+            }
+
+            return parsed;
+          }),
+      ],
+      invalidTypeError,
+    )
+    .pipe(
+      z
+        .number(invalidTypeError)
+        .min(1, "Too few members")
+        .max(100, "Too many members"),
+    );
 }
 
 export function getZodMediaConfigValidation() {
@@ -81,6 +106,20 @@ export function getZodMediaConfigValidation() {
     .object({
       audio: z.boolean("Invalid audio"),
       video: z.boolean("Invalid video"),
+    })
+    .strict();
+}
+
+export function getZodIdValidation() {
+  return z.string("Invalid id").trim().min(1, "Required");
+}
+
+export function getZodIceValidation() {
+  return z
+    .object({
+      candidate: z.string(),
+      sdpMid: z.string().nullable().optional(),
+      sdpMLineIndex: z.number().nullable().optional(),
     })
     .strict();
 }
@@ -121,7 +160,7 @@ export function getZodCreateRoomDataValidation() {
 }
 
 export function getZodJoinRoomDataValidation() {
-  return z.object({ id: z.string() }).strict();
+  return z.object({ id: getZodIdValidation() }).strict();
 }
 
 export function getZodSendMediaConfigDataValidation() {
@@ -131,12 +170,8 @@ export function getZodSendMediaConfigDataValidation() {
 export function getZodSendIceDataValidation() {
   return z
     .object({
-      userId: z.string(),
-      ice: z.object({
-        candidate: z.string(),
-        sdpMid: z.string().nullable().optional(),
-        sdpMLineIndex: z.number().nullable().optional(),
-      }),
+      userId: getZodIdValidation(),
+      ice: getZodIceValidation(),
     })
     .strict();
 }
@@ -144,7 +179,7 @@ export function getZodSendIceDataValidation() {
 export function getZodSendSDPDataValidation() {
   return z
     .object({
-      userId: z.string(),
+      userId: getZodIdValidation(),
       sdp: z.string(),
       type: z.union([z.literal("offer"), z.literal("answer")]),
     })
@@ -152,7 +187,7 @@ export function getZodSendSDPDataValidation() {
 }
 
 export function getZodRemoveUserDataValidation() {
-  return z.object({ userId: z.string() }).strict();
+  return z.object({ userId: getZodIdValidation() }).strict();
 }
 
 export function getZodSendMessageDataValidation() {

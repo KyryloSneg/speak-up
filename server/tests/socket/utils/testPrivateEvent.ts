@@ -1,14 +1,12 @@
 import ApiError from "#errors/ApiError.ts";
 import getServerSocket from "#tests/socket/utils/getServerSocket.ts";
 import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
-import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
-import type { IOSocket } from "#types/socket.ts";
 import {
+  SocketAuthConnectionErrorCode,
   type SocketClientToServerEvents,
-  type SocketResponseEvents,
 } from "@speak-up/shared";
 import { io as createClient } from "socket.io-client";
 import { describe, expect, it } from "vitest";
@@ -16,16 +14,15 @@ import { describe, expect, it } from "vitest";
 function testPrivateEvent<Event extends keyof SocketClientToServerEvents>(
   getTestKit: () => Awaited<ReturnType<typeof setupSocketTests>>,
   event: Event,
-  responseEvent: (typeof SocketResponseEvents)[keyof typeof SocketResponseEvents],
-  ...data: Parameters<SocketClientToServerEvents[Event]>
 ): void {
   describe(`private event checks of ${event}`, () => {
-    function testErrorRes(serverSocket: IOSocket<true>, res: unknown): void {
-      expect(res).toStrictEqual({
-        error: ApiError.UnauthorizedError().message,
+    function testErrorRes(res: unknown): void {
+      expect(res).toMatchObject({
+        message: ApiError.UnauthorizedError().message,
+        data: expect.objectContaining({
+          code: SocketAuthConnectionErrorCode,
+        }),
       });
-
-      expect(serverSocket?.data?.userId).toBeUndefined();
     }
 
     it("should disallow exchanging event messages if accessToken isn't provided", async () => {
@@ -35,16 +32,11 @@ function testPrivateEvent<Event extends keyof SocketClientToServerEvents>(
         forceNew: true,
       });
 
-      await waitForClientSocketsConnect(clientSocket);
+      const connectResponses = await waitForClientSocketsConnect(clientSocket);
+      connectResponses.forEach(res => testErrorRes(res));
 
       const serverSocket = getServerSocket<true>(testKit.io, clientSocket.id);
-      if (!serverSocket) throw new Error("Server socket isn't defined");
-
-      const clientSocketEventPromise = waitFor(clientSocket, responseEvent);
-      clientSocket.emit(event, ...data);
-
-      const res = await clientSocketEventPromise;
-      testErrorRes(serverSocket, res);
+      expect(serverSocket).toBeUndefined();
     });
 
     it("should disallow exchanging event messages if an invalid accessToken is provided", async () => {
@@ -55,16 +47,11 @@ function testPrivateEvent<Event extends keyof SocketClientToServerEvents>(
         `${tokens.accessToken}corrupted`,
       );
 
-      await waitForClientSocketsConnect(clientSocket);
-
-      const clientSocketEventPromise = waitFor(clientSocket, responseEvent);
-      clientSocket.emit(event, ...data);
+      const connectResponses = await waitForClientSocketsConnect(clientSocket);
+      connectResponses.forEach(res => testErrorRes(res));
 
       const serverSocket = getServerSocket<true>(testKit.io, clientSocket.id);
-      if (!serverSocket) throw new Error("Server socket isn't defined");
-
-      const res = await clientSocketEventPromise;
-      testErrorRes(serverSocket, res);
+      expect(serverSocket).toBeUndefined();
     });
   });
 }

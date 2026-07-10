@@ -14,9 +14,12 @@ async function socketAuthMiddleware(
     socket.handshake.headers?.["accesstoken"] ||
     socket.handshake.query?.["accessToken"];
 
-  const userId = accessToken
-    ? (await TokenService.validateAccessToken(accessToken))?.userId || null
+  const payload = accessToken
+    ? (await TokenService.validateAccessToken(accessToken, false)) || null
     : null;
+
+  const userId = payload?.userId;
+  const expired = payload?.exp;
 
   const userIdSocketRegisteredTo = socket.data.userId;
 
@@ -28,9 +31,10 @@ async function socketAuthMiddleware(
   if (!userId) throw ApiError.UnauthorizedError();
 
   const room = getUserRoom(userId);
-
   socket.join(room);
+
   socket.data.userId = userId;
+  socket.data.expired = expired;
 
   next();
 }

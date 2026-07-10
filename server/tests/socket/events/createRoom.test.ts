@@ -40,12 +40,7 @@ describe("createRoom event", () => {
   const invalidData: SocketClientToServerEventsData[typeof SocketEvents.CREATE_ROOM] =
     { maxMembers: 0 };
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.CREATE_ROOM,
-    SocketResponseEvents.CREATE_ROOM,
-    validData,
-  );
+  testPrivateEvent(() => testKit, SocketEvents.CREATE_ROOM);
 
   async function setupSocket(): Promise<{
     user: User;

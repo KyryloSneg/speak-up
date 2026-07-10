@@ -1,5 +1,6 @@
 import type {
   getZodCreateRoomDataValidation,
+  getZodIceValidation,
   getZodJoinRoomDataValidation,
   getZodRemoveUserDataValidation,
   getZodSendIceDataValidation,
@@ -14,6 +15,8 @@ import type { UserDto } from "./user.ts";
 
 export const SocketEvents = {
   CONNECTION: "connection",
+  CONNECT: "connect",
+  CONNECT_ERROR: "connect_error",
   CREATE_ROOM: "createRoom",
   JOIN_ROOM: "joinRoom",
   LEAVE_ROOM: "leaveRoom",
@@ -30,6 +33,7 @@ export const SocketEvents = {
   SEND_MESSAGE: "sendMessage",
   RECEIVED_MESSAGE: "receivedMessage",
   DISCONNECTING: "disconnecting",
+  DISCONNECT: "disconnect",
 } as const;
 
 export const SocketResponseEvents = {
@@ -93,7 +97,10 @@ export interface SocketServerToClientEvents {
     sdp: string;
     type: "offer" | "answer";
   }) => void;
-  [SocketEvents.RECEIVED_ICE]: (data: { userId: string; ice: string }) => void;
+  [SocketEvents.RECEIVED_ICE]: (data: {
+    userId: string;
+    ice: SchemaOfZodValidationFn<typeof getZodIceValidation>;
+  }) => void;
   [SocketEvents.RECEIVED_MESSAGE]: (data: { message: Message }) => void;
   [SocketResponseEvents.CREATE_ROOM]: (
     data: { id: string } | SocketResponseError,
@@ -122,3 +129,11 @@ export type SocketClientToServerEventsData =
 
 export type SocketServerToClientEventsData =
   ExtractDataFromSocketEvents<SocketServerToClientEvents>;
+
+export interface SocketAuthConnectionError extends Error {
+  data?: {
+    code: string;
+  };
+}
+
+export const SocketAuthConnectionErrorCode = "authError";

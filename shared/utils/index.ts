@@ -10,4 +10,5 @@ export { default as getNameInitials } from "./getNameInitials.ts";
 export { default as getRGBFromHEX } from "./getRGBFromHEX.ts";
 export { default as getSymmetricSecret } from "./getSymmetricSecret.ts";
 export { default as objectEntries } from "./objectEntries.ts";
+export { default as StringActions } from "./StringActions.ts";
 export * from "./validation.ts";

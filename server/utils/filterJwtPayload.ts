@@ -1,11 +1,8 @@
 import type { JWTPayload, JWTPayloadRaw } from "#types/jwtPayload.ts";
 
-function filterJwtPayload(payload: JWTPayloadRaw): JWTPayload {
-  const jwtPayload: JWTPayloadRaw = { userId: payload.userId };
-
-  // we use this util just for raw type-safety on the assignment above,
-  // so this casting isn't too bad
-  return jwtPayload as JWTPayload;
+function filterJwtPayload(payload: JWTPayload): JWTPayloadRaw {
+  const jwtPayload: JWTPayloadRaw = { userId: payload.userId } as const;
+  return jwtPayload;
 }
 
 export default filterJwtPayload;

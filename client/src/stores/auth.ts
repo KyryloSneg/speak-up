@@ -26,7 +26,7 @@ export const useAuthStore = defineStore("auth", () => {
       }
     } finally {
       // put it inside finally just in case. we can put an error-throwable code
-      // above and forget about this line
+      // above and forget about these lines
       isGettingInitialized.value = false;
       isInitialized.value = true;
     }

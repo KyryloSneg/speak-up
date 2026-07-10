@@ -1,9 +1,11 @@
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import type { IOClientSocket } from "#types/socket.ts";
 
+type ConnectResponse = unknown;
+
 function waitForClientSocketsConnect(
   ...clientSockets: IOClientSocket[]
-): Promise<unknown[]> {
+): Promise<ConnectResponse[]> {
   return Promise.all(
     clientSockets.map(clientSocket =>
       Promise.any([

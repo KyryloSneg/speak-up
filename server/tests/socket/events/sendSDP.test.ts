@@ -48,12 +48,7 @@ describe("sendSDP event", () => {
     type: "offerAndAnswer" as unknown as "offer" | "answer",
   };
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.SEND_SDP,
-    SocketResponseEvents.SEND_SDP,
-    getValidDataObj("userId", "offer"),
-  );
+  testPrivateEvent(() => testKit, SocketEvents.SEND_SDP);
 
   async function setupSockets(
     isToJoinThirdSocketToRoom: boolean = true,

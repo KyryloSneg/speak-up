@@ -47,12 +47,7 @@ describe("sendIce event", () => {
     ice: { candidate: "candidate", sdpMid: "sdpMid", sdpMLineIndex: 0 },
   };
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.SEND_ICE,
-    SocketResponseEvents.SEND_ICE,
-    getValidDataObj("userId"),
-  );
+  testPrivateEvent(() => testKit, SocketEvents.SEND_ICE);
 
   async function setupSockets(
     isToJoinThirdSocketToRoom: boolean = true,

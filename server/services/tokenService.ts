@@ -1,6 +1,6 @@
 import type { Token } from "#generated/prisma/client.ts";
 import prisma from "#services/prisma.ts";
-import type { JWTPayload } from "#types/jwtPayload.ts";
+import type { JWTPayload, JWTPayloadRaw } from "#types/jwtPayload.ts";
 import {
   ACCESS_TOKEN_EXPIRATION_TIME_MINUTES,
   REFRESH_TOKEN_EXPIRATION_TIME_DAYS,
@@ -29,27 +29,53 @@ class TokenService {
     };
   }
 
-  static async validateAccessToken(token: string): Promise<JWTPayload | null> {
+  static async validateAccessToken(
+    token: string,
+    isToFilterOutPayload?: true,
+  ): Promise<JWTPayloadRaw | null>;
+
+  static async validateAccessToken(
+    token: string,
+    isToFilterOutPayload: false,
+  ): Promise<JWTPayload | null>;
+
+  static async validateAccessToken(
+    token: string,
+    isToFilterOutPayload: boolean = true,
+  ) {
     try {
-      const { payload: userData } = await jwtVerify<JWTPayload>(
+      const { payload } = await jwtVerify<JWTPayload>(
         token,
         getSymmetricSecret(process.env.JWT_ACCESS_SECRET),
       );
 
-      return filterJwtPayload(userData);
+      return isToFilterOutPayload ? filterJwtPayload(payload) : payload;
     } catch {
       return null;
     }
   }
 
-  static async validateRefreshToken(token: string): Promise<JWTPayload | null> {
+  static async validateRefreshToken(
+    token: string,
+    isToFilterOutPayload?: true,
+  ): Promise<JWTPayloadRaw | null>;
+
+  static async validateRefreshToken(
+    token: string,
+    isToFilterOutPayload: false,
+  ): Promise<JWTPayload | null>;
+
+  static async validateRefreshToken(
+    token: string,
+    isToFilterOutPayload: boolean = true,
+  ) {
     try {
-      const { payload: userData } = await jwtVerify<JWTPayload>(
+      const { payload } = await jwtVerify<JWTPayload>(
         token,
         getSymmetricSecret(process.env.JWT_REFRESH_SECRET),
       );
 
-      return filterJwtPayload(userData);
+      return isToFilterOutPayload ? filterJwtPayload(payload) : payload;
     } catch {
       return null;
     }

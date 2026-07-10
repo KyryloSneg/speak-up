@@ -32,5 +32,6 @@ globalStyle(":root", {
     "--ring": globalThemeContract.outline.focus,
 
     "--radius": "0.625rem",
+    "--default-transition-duration": "200ms",
   },
 });

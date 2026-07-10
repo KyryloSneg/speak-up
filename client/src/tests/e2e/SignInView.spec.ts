@@ -1,11 +1,11 @@
 import { test } from "@/tests/e2e/utils/test";
-import { Routes, RoutesWithoutParams } from "@/types/routes";
+import { RoutesWithoutParams } from "@/types/routes";
 import { expect } from "@playwright/test";
 import { ApiRoutes, APP_NAME } from "@speak-up/shared";
 
 test.describe("SignInView", () => {
   test("should render AppHeader", async ({ page }) => {
-    await page.goto(Routes.SIGN_IN);
+    await page.goto(RoutesWithoutParams.SIGN_IN);
     await page.waitForLoadState("domcontentloaded");
 
     const appHeading = page.getByRole("heading", { level: 1, name: APP_NAME });
@@ -18,7 +18,7 @@ test.describe("SignInView", () => {
   test("should render 'go to /register page' link and properly maintain input autofocus", async ({
     page,
   }) => {
-    await page.goto(Routes.SIGN_IN);
+    await page.goto(RoutesWithoutParams.SIGN_IN);
     const goToSignUpLink = page.locator(
       `a[href="${RoutesWithoutParams.REGISTER}"]`,
     );
@@ -36,7 +36,7 @@ test.describe("SignInView", () => {
   });
 
   test("should properly handle form validation", async ({ page }) => {
-    await page.goto(Routes.SIGN_IN);
+    await page.goto(RoutesWithoutParams.SIGN_IN);
 
     const submitButton = page.getByRole("button", { name: "Log In" });
 
@@ -72,7 +72,7 @@ test.describe("SignInView", () => {
       route.fulfill({ status: 500, json: { message: serverErrorMessage } }),
     );
 
-    await page.goto(Routes.SIGN_IN);
+    await page.goto(RoutesWithoutParams.SIGN_IN);
 
     const submitButton = page.getByRole("button", { name: "Log In" });
 
@@ -86,9 +86,10 @@ test.describe("SignInView", () => {
     await passwordInput.blur();
 
     await submitButton.click();
-
     const errorMessage = page.locator(`text=${serverErrorMessage}`);
+
     await expect(errorMessage).toBeVisible();
+    await expect(page).toHaveURL(RoutesWithoutParams.SIGN_IN);
   });
 
   test("should properly handle successful sign in", async ({ page }) => {
@@ -102,7 +103,7 @@ test.describe("SignInView", () => {
       }),
     );
 
-    await page.goto(Routes.SIGN_IN);
+    await page.goto(RoutesWithoutParams.SIGN_IN);
 
     const submitButton = page.getByRole("button", { name: "Log In" });
 

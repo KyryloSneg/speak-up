@@ -1,5 +1,5 @@
 import { test } from "@/tests/e2e/utils/test";
-import { Routes, RoutesWithoutParams } from "@/types/routes";
+import { RoutesWithoutParams } from "@/types/routes";
 import { expect } from "@playwright/test";
 import { ApiRoutes } from "@speak-up/shared";
 
@@ -7,7 +7,7 @@ test.describe("RegisterView", () => {
   test("should render 'go to /sign-in page' link and properly maintain input autofocus", async ({
     page,
   }) => {
-    await page.goto(Routes.REGISTER);
+    await page.goto(RoutesWithoutParams.REGISTER);
     const goToSignInLink = page.locator(
       `a[href="${RoutesWithoutParams.SIGN_IN}"]`,
     );
@@ -25,7 +25,7 @@ test.describe("RegisterView", () => {
   });
 
   test("should properly handle form validation", async ({ page }) => {
-    await page.goto(Routes.REGISTER);
+    await page.goto(RoutesWithoutParams.REGISTER);
 
     const submitButton = page.getByRole("button", { name: "Register" });
 
@@ -67,7 +67,7 @@ test.describe("RegisterView", () => {
       route.fulfill({ status: 500, json: { message: serverErrorMessage } }),
     );
 
-    await page.goto(Routes.REGISTER);
+    await page.goto(RoutesWithoutParams.REGISTER);
 
     const submitButton = page.getByRole("button", { name: "Register" });
 
@@ -84,9 +84,10 @@ test.describe("RegisterView", () => {
     await passwordInput.blur();
 
     await submitButton.click();
-
     const errorMessage = page.locator(`text=${serverErrorMessage}`);
+
     await expect(errorMessage).toBeVisible();
+    await expect(page).toHaveURL(RoutesWithoutParams.REGISTER);
   });
 
   test("should properly handle successful sign in", async ({ page }) => {
@@ -100,7 +101,7 @@ test.describe("RegisterView", () => {
       }),
     );
 
-    await page.goto(Routes.REGISTER);
+    await page.goto(RoutesWithoutParams.REGISTER);
 
     const submitButton = page.getByRole("button", { name: "Register" });
 

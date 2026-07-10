@@ -1,0 +1,10 @@
+export { default as UIDialog } from "./UIDialog.vue";
+export { default as UIDialogClose } from "./UIDialogClose.vue";
+export { default as UIDialogContent } from "./UIDialogContent.vue";
+export { default as UIDialogDescription } from "./UIDialogDescription.vue";
+export { default as UIDialogFooter } from "./UIDialogFooter.vue";
+export { default as UIDialogHeader } from "./UIDialogHeader.vue";
+export { default as UIDialogOverlay } from "./UIDialogOverlay.vue";
+export { default as UIDialogScrollContent } from "./UIDialogScrollContent.vue";
+export { default as UIDialogTitle } from "./UIDialogTitle.vue";
+export { default as UIDialogTrigger } from "./UIDialogTrigger.vue";

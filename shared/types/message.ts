@@ -8,6 +8,7 @@ export type MessageContentPart = SchemaOfZodValidationFn<
   typeof getZodMessageContentPartValidation
 >;
 
+// TODO: .createdAt + user nickname snapshot
 export interface Message {
   id: string;
   userId: string;

@@ -1,6 +1,7 @@
 import roomsCleanupLoop from "#cleanup/roomsCleanupLoop.ts";
 import type { IO } from "#types/socket.ts";
 import initSocket from "#utils/initSocket.ts";
+import socketAuthMiddlewareWithErrorHandling from "#utils/socketAuthMiddlewareWithErrorHandling.ts";
 import {
   SocketEvents,
   type SocketClientToServerEvents,
@@ -21,6 +22,7 @@ function createIO(server: HTTPServer): IO {
       // does nothing ("polling"-only) but let it be
       cors: {
         origin: process.env.CLIENT_URL,
+        credentials: true,
       },
       // the actual semi-"CORS Policy"
       allowRequest: (req, cb) => {
@@ -40,7 +42,9 @@ function createIO(server: HTTPServer): IO {
     },
   );
 
-  io.on(SocketEvents.CONNECTION, socket => initSocket(socket, io));
+  io.use((socket, next) =>
+    socketAuthMiddlewareWithErrorHandling(io, socket, next),
+  ).on(SocketEvents.CONNECTION, socket => initSocket(socket, io));
 
   if (process.env.NODE_ENV !== "test") {
     io.once(SocketEvents.CONNECTION, () => roomsCleanupLoop(io));

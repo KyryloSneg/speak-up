@@ -1,4 +1,5 @@
-import { recipe, type RecipeVariants } from "@vanilla-extract/recipes";
+import type { RecipeVariantsProps } from "@/styles/recipe";
+import { recipe } from "@vanilla-extract/recipes";
 
 export const heading = recipe({
   base: {
@@ -37,8 +38,4 @@ export const icon = recipe({
   },
 });
 
-type HeadingRecipeVariants = RecipeVariants<typeof heading>;
-export type HeadingVariants = Exclude<
-  Required<HeadingRecipeVariants>,
-  undefined
->;
+export type HeadingVariants = RecipeVariantsProps<typeof heading>;
