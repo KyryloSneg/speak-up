@@ -6,7 +6,6 @@ import testPrivateEvent from "#tests/socket/utils/testPrivateEvent.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
 import waitAfterEmit from "#tests/socket/utilsTests/waitAfterEmit.ts";
-import { mockUser } from "#tests/utils/consts.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
@@ -30,12 +29,7 @@ describe("removeUser event", () => {
     await testKit.cleanup();
   });
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.REMOVE_USER,
-    SocketResponseEvents.REMOVE_USER,
-    { userId: mockUser.id },
-  );
+  testPrivateEvent(() => testKit, SocketEvents.REMOVE_USER);
 
   async function setupSockets(
     isToJoinThirdSocketToRoom: boolean = true,

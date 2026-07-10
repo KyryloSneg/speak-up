@@ -1,11 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
 import process from "node:process";
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// require('dotenv').config();
+config();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -33,7 +30,7 @@ export default defineConfig({
   use: {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
-    /* Base URL to use in actions like `await page.goto('/')`. */
+    /* Base URL to use in actions like `await page.goto(/')`. */
     baseURL: "http://127.0.0.1:4173",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
@@ -41,6 +38,13 @@ export default defineConfig({
 
     /* Only on CI systems run the tests headless */
     headless: !!process.env.CI,
+
+    launchOptions: {
+      args: [
+        "--use-fake-device-for-media-stream",
+        "--use-fake-ui-for-media-stream",
+      ],
+    },
   },
 
   /* Configure projects for major browsers */

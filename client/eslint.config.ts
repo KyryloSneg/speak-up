@@ -24,6 +24,21 @@ export default defineConfigWithVueTs(
     },
   },
 
+  {
+    rules: {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+
   globalIgnores(["**/dist/**", "**/dist-ssr/**", "**/coverage/**"]),
 
   ...pluginVue.configs["flat/essential"],

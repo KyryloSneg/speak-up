@@ -9,4 +9,5 @@ export const header = style({
   height: "max-content",
   paddingInline: "1rem",
   paddingBlock: "0.5rem",
+  marginBottom: "3rem",
 });

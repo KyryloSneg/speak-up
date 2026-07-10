@@ -1,30 +1,31 @@
 <template>
-  <BaseAuthView>
-    <AuthSection
-      heading="Sign In"
-      :goToOtherAuthMethodLink="{
-        text: 'No account? Create one',
-        to: RoutesWithoutParams.REGISTER,
-      }"
-      :submitButton="{
-        text: 'Log In',
-        submit,
-      }"
-      :isSubmitting
-      :disabled="isError"
-    >
-      <UIFieldGroup>
-        <AuthField name="username" :autofocus="true" />
-        <AuthField name="password" type="password" />
-      </UIFieldGroup>
-    </AuthSection>
-  </BaseAuthView>
+  <FormCard
+    heading="Sign In"
+    :link="{
+      text: 'No account? Create one',
+      to: RoutesWithoutParams.REGISTER,
+    }"
+    :submitButton="{
+      text: 'Log In',
+      submit,
+    }"
+    :isSubmitting
+    :disabled="isError"
+    :headerClass="styles.header"
+    :titleClass="styles.title"
+    :actionClass="styles.action"
+  >
+    <UIFieldGroup>
+      <FormField name="username" :autofocus="true" />
+      <FormField name="password" type="password" />
+    </UIFieldGroup>
+  </FormCard>
 </template>
 
 <script setup lang="ts">
-import AuthField from "@/components/auth/authField/AuthField.vue";
-import AuthSection from "@/components/auth/section/AuthSection.vue";
-import BaseAuthView from "@/components/auth/view/BaseAuthView.vue";
+import FormCard from "@/components/formCard/FormCard.vue";
+import FormField from "@/components/formField/FormField.vue";
+import * as styles from "@/components/layout/auth/AuthLayout.css";
 import { UIFieldGroup } from "@/components/ui/shadcn/field";
 import $api from "@/http";
 import router from "@/router";

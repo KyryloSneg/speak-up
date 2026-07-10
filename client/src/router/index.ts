@@ -1,11 +1,14 @@
 import { useAuthStore } from "@/stores/auth";
+import { useRoomStore } from "@/stores/room";
 import {
+  RouteLayoutNames,
   RouteMetaAccessTypes,
   Routes,
   RoutesWithoutParams,
   RouteToName,
 } from "@/types/routes";
 import handleLogout from "@/utils/handleLogout";
+import postAuthCb from "@/utils/postAuthCb";
 import HomeView from "@/views/HomeView.vue";
 import {
   createRouter,
@@ -18,7 +21,19 @@ export const routes = [
     path: Routes.HOME,
     name: RouteToName[Routes.HOME],
     component: HomeView,
-    meta: { accessType: RouteMetaAccessTypes.AUTH },
+    meta: {
+      layout: RouteLayoutNames.HOME,
+      accessType: RouteMetaAccessTypes.AUTH,
+    },
+  },
+  {
+    path: Routes.CREATE_ROOM,
+    name: RouteToName[Routes.CREATE_ROOM],
+    component: () => import("@/views/CreateRoomView.vue"),
+    meta: {
+      layout: RouteLayoutNames.HOME,
+      accessType: RouteMetaAccessTypes.AUTH,
+    },
   },
   {
     path: Routes.ROOM,
@@ -31,13 +46,19 @@ export const routes = [
     path: Routes.REGISTER,
     name: RouteToName[Routes.REGISTER],
     component: () => import("@/views/RegisterView.vue"),
-    meta: { accessType: RouteMetaAccessTypes.GUEST },
+    meta: {
+      layout: RouteLayoutNames.AUTH,
+      accessType: RouteMetaAccessTypes.GUEST,
+    },
   },
   {
     path: Routes.SIGN_IN,
     name: RouteToName[Routes.SIGN_IN],
     component: () => import("@/views/SignInView.vue"),
-    meta: { accessType: RouteMetaAccessTypes.GUEST },
+    meta: {
+      layout: RouteLayoutNames.AUTH,
+      accessType: RouteMetaAccessTypes.GUEST,
+    },
   },
 ] as const satisfies RouteRecordRaw[];
 
@@ -46,20 +67,29 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   const authStore = useAuthStore();
-  if (!authStore.isInitialized) await authStore.initAuth();
+  if (!authStore.isInitialized) {
+    await authStore.initAuth();
+    if (authStore.isAuth) postAuthCb();
+  }
 
   if (to.meta.accessType === RouteMetaAccessTypes.AUTH && !authStore.isAuth) {
     const nextRoute = handleLogout(false);
-    return next(nextRoute);
+    return nextRoute;
   }
 
   if (to.meta.accessType === RouteMetaAccessTypes.GUEST && authStore.isAuth) {
-    return next(RoutesWithoutParams.HOME);
+    return RoutesWithoutParams.HOME;
   }
 
-  next();
+  if (to.name === RouteToName[Routes.ROOM]) {
+    const roomStore = useRoomStore();
+    if (!roomStore.room) return RoutesWithoutParams.HOME;
+  } else if (from.name === RouteToName[Routes.ROOM]) {
+    const roomStore = useRoomStore();
+    roomStore.leaveRoom(false);
+  }
 });
 
 export default router;

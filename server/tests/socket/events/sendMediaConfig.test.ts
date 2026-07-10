@@ -43,12 +43,7 @@ describe("sendMediaConfig event", () => {
     config: { audio: "true" as unknown as boolean, video: true },
   };
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.SEND_MEDIA_CONFIG,
-    SocketResponseEvents.SEND_MEDIA_CONFIG,
-    validDataObj,
-  );
+  testPrivateEvent(() => testKit, SocketEvents.SEND_MEDIA_CONFIG);
 
   async function setupSockets(
     isToJoinThirdSocketToRoom: boolean = true,

@@ -45,12 +45,7 @@ describe("sendMessage event", () => {
     content: [{ type: "text", value: "" }],
   };
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.SEND_MESSAGE,
-    SocketResponseEvents.SEND_MESSAGE,
-    validDataObj,
-  );
+  testPrivateEvent(() => testKit, SocketEvents.SEND_MESSAGE);
 
   async function setupSockets(
     isToJoinThirdSocketToRoom: boolean = true,

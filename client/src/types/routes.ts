@@ -1,15 +1,22 @@
-import { objectEntries, type Invert } from "@speak-up/shared";
+import {
+  objectEntries,
+  type EqualKeysAndValues,
+  type Invert,
+} from "@speak-up/shared";
+import { defineAsyncComponent } from "vue";
 
 export const Routes = {
   HOME: "/:roomId?",
-  ROOM: "/room/:id",
+  CREATE_ROOM: "/createRoom",
+  ROOM: "/room",
   REGISTER: "/register",
   SIGN_IN: "/sign-in",
 } as const;
 
 export const RoutesWithoutParams = {
   HOME: "/",
-  ROOM: "/room/",
+  CREATE_ROOM: "/createRoom",
+  ROOM: "/room",
   REGISTER: "/register",
   SIGN_IN: "/sign-in",
 } as const;
@@ -20,3 +27,16 @@ export const RouteToName = Object.fromEntries(
 ) as RouteToNameType;
 
 export const RouteMetaAccessTypes = { GUEST: "guest", AUTH: "auth" } as const;
+export const RouteLayouts = {
+  HOME: defineAsyncComponent(
+    () => import("@/components/layout/home/HomeLayout.vue"),
+  ),
+  AUTH: defineAsyncComponent(
+    () => import("@/components/layout/auth/AuthLayout.vue"),
+  ),
+} as const;
+
+export type RouteLayoutNamesType = EqualKeysAndValues<typeof RouteLayouts>;
+export const RouteLayoutNames = Object.fromEntries(
+  objectEntries(RouteLayouts).map(([key]) => [key, key]),
+) as RouteLayoutNamesType;

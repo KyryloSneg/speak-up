@@ -16,6 +16,7 @@ export default mergeConfig(
         "src/tests/ct/**",
       ],
       root: fileURLToPath(new URL("./", import.meta.url)),
+      globals: true,
     },
   }),
 );

@@ -6,14 +6,14 @@ import type {
 import type { DefaultEventsMap, Server, Socket } from "socket.io";
 import type { Socket as ClientSocket } from "socket.io-client";
 
-type UserIdFieldObject = { userId: User["id"] };
+type SocketData = { userId: User["id"]; expired: number };
 
 export type IO = Server<SocketClientToServerEvents, SocketServerToClientEvents>;
 export type IOSocket<IsAuth extends boolean = false> = Socket<
   SocketClientToServerEvents,
   SocketServerToClientEvents,
   DefaultEventsMap,
-  IsAuth extends true ? UserIdFieldObject : Partial<UserIdFieldObject>
+  IsAuth extends true ? SocketData : Partial<SocketData>
 >;
 
 export type IOClientSocket = ClientSocket<

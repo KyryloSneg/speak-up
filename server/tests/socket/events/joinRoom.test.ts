@@ -13,7 +13,6 @@ import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.
 import setupDbCleanup from "#tests/utils/setupDb.ts";
 import type { IOClientSocket, IOSocket } from "#types/socket.ts";
 import { SocketResponseErrorMessages } from "#types/socketResponseErrorMessages.ts";
-import generateRoomId from "#utils/generateRoomId.ts";
 import rooms from "#utils/rooms.ts";
 import * as sharedModule from "@speak-up/shared";
 import { SocketEvents, SocketResponseEvents, UserDto } from "@speak-up/shared";
@@ -32,12 +31,7 @@ describe("joinRoom event", () => {
     await testKit.cleanup();
   });
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.JOIN_ROOM,
-    SocketResponseEvents.JOIN_ROOM,
-    { id: generateRoomId() },
-  );
+  testPrivateEvent(() => testKit, SocketEvents.JOIN_ROOM);
 
   async function setupSockets(areRoomsForSingleUser: boolean = false): Promise<{
     firstRoom: string;

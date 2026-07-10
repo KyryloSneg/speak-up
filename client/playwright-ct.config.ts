@@ -24,6 +24,11 @@ export default defineConfig({
     ctPort: 3100,
     ctViteConfig: {
       plugins: [vue(), tailwindcss(), vanillaExtractPlugin() as any],
+      build: {
+        rollupOptions: {
+          external: ["@napi-rs/canvas"],
+        },
+      },
       resolve: {
         alias: {
           "@": fileURLToPath(new URL("./src", import.meta.url)),
