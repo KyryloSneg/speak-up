@@ -5,6 +5,7 @@ import type { RoomMediaConfigUserId } from "@/types/media";
 import type { Room } from "@/types/room";
 import { RoutesWithoutParams } from "@/types/routes";
 import socket from "@/utils/socket";
+import updateUser from "@/utils/updateUser";
 import { SocketEvents, SocketResponseEvents } from "@speak-up/shared";
 import { defineStore } from "pinia";
 import { ref } from "vue";
@@ -88,6 +89,25 @@ export const useRoomStore = defineStore("room", () => {
       if (!room.value || room.value.id !== data.id) return;
       cleanup();
     });
+
+    socket
+      .off(SocketEvents.CHANGED_NICKNAME)
+      .on(SocketEvents.CHANGED_NICKNAME, data => {
+        // update room user data
+        if (room.value) {
+          const roomUser = room.value.users.find(
+            user => user.id === data.userId,
+          );
+
+          if (roomUser) updateUser(roomUser, data);
+        }
+
+        // other tabs synchronization
+        const authStore = useAuthStore();
+        if (data.userId === authStore.user?.id) {
+          updateUser(authStore.user, data);
+        }
+      });
   }
 
   function createRoom(maxMembers: number): void {

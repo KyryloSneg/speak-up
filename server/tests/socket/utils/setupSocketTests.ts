@@ -1,5 +1,5 @@
 import type { IO, IOClientSocket } from "#types/socket.ts";
-import createIO from "#utils/io.ts";
+import createIO, { assignSingletonIO } from "#utils/io.ts";
 import { config } from "dotenv";
 import { createServer, type Server } from "http";
 import { io as createClient } from "socket.io-client";
@@ -37,7 +37,7 @@ async function setupSocketTests(): Promise<TestKit> {
   const cleanup = async () => {
     activeClientSockets.forEach(clientSocket => clientSocket.disconnect());
 
-    await new Promise<void>(res => io.close(() => res()));
+    await new Promise(res => io.close(() => res(assignSingletonIO())));
     await new Promise<void>(res => server.close(() => res()));
   };
 

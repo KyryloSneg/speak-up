@@ -1,14 +1,20 @@
 import mapToUserDto from "#dtos/userDto.ts";
 import ApiError from "#errors/ApiError.ts";
 import { type Token, type User } from "#generated/prisma/client.ts";
+import getRoomSockets from "#services/getRoomSockets.ts";
 import prisma from "#services/prisma.ts";
 import TokenService from "#services/tokenService.ts";
+import type { IOSocket } from "#types/socket.ts";
 import { PASSWORD_HASH_SALT, TEST_PASSWORD_HASH_SALT } from "#utils/consts.ts";
+import getRoomIdOfUser from "#utils/getRoomIdOfUser.ts";
+import getUserRoom from "#utils/getUserRoom.ts";
+import createIO from "#utils/io.ts";
 import userToJwtPayload from "#utils/userToJwtPayload.ts";
 import {
   blobToBase64,
   generateLetterPictureBlob,
   getNameInitials,
+  SocketEvents,
   type UserDataWithTokens,
   type UserDto,
 } from "@speak-up/shared";
@@ -143,14 +149,46 @@ class UserService {
     const newPictureUrl =
       await UserService.generateLetterPictureWithError(nickname);
 
+    const picture = haveInitialsBeenChanged ? newPictureUrl : undefined;
+    const letterPicture = haveInitialsBeenChanged ? newPictureUrl : undefined;
+
     const newUser = await prisma.user.update({
       where: { id: userId },
       data: {
         nickname,
-        picture: haveInitialsBeenChanged ? newPictureUrl : undefined,
-        letterPicture: haveInitialsBeenChanged ? newPictureUrl : undefined,
+        picture,
+        letterPicture,
       },
     });
+
+    async function socketCb(): Promise<void> {
+      // error here shouldn't affect the whole endpoint
+      try {
+        const io = createIO();
+        if (!io) throw new Error("Ignore");
+
+        const userRoom = getUserRoom(userId);
+        const userSockets = await getRoomSockets(io, userRoom);
+
+        if (!userSockets.length) throw new Error("Ignore");
+        const roomId = await getRoomIdOfUser(
+          io,
+          userSockets[0] as IOSocket<true>,
+        );
+
+        const targetRooms = [...userSockets.map(socket => socket.id)];
+        if (roomId) targetRooms.push(roomId);
+
+        io.to(targetRooms).emit(SocketEvents.CHANGED_NICKNAME, {
+          userId,
+          nickname,
+          picture,
+          letterPicture,
+        });
+      } catch {}
+    }
+
+    socketCb(); // don't wait for it's end
 
     const userDto = mapToUserDto(newUser);
     return userDto;

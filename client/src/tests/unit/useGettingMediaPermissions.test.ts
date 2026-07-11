@@ -3,7 +3,7 @@ import { usePermissionsStore } from "@/stores/permissions";
 import setupFakeBrowserMediaEngine from "@/tests/utils/setupFakeBrowserMediaEngine";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { effectScope, nextTick, ref, type EffectScope } from "vue"; // 1. Import effectScope
+import { effectScope, nextTick, ref, type EffectScope } from "vue";
 
 const mockMicPermission = ref<PermissionState>("prompt");
 const mockCamPermission = ref<PermissionState>("prompt");
