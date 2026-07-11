@@ -10,7 +10,15 @@ import {
 import type { Server as HTTPServer } from "http";
 import { Server } from "socket.io";
 
-function createIO(server: HTTPServer): IO {
+let singletonIo: IO | undefined;
+
+function createIO(server: HTTPServer): IO;
+function createIO(): IO | undefined;
+
+function createIO(server?: HTTPServer): IO | undefined {
+  if (singletonIo) return singletonIo;
+  if (!server) return;
+
   const io = new Server<SocketClientToServerEvents, SocketServerToClientEvents>(
     server,
     {
@@ -50,6 +58,12 @@ function createIO(server: HTTPServer): IO {
     io.once(SocketEvents.CONNECTION, () => roomsCleanupLoop(io));
   }
 
+  singletonIo = io;
+  return io;
+}
+
+export function assignSingletonIO(io?: IO): IO | undefined {
+  singletonIo = io;
   return io;
 }
 

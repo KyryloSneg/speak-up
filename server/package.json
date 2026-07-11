@@ -26,7 +26,8 @@
     "test:unit": "dotenv -e .env.test -- vitest run --dir tests/unit",
     "test:api": "dotenv -e .env.test -- prisma db push && dotenv -e .env.test -- vitest run --dir tests/api",
     "test:api:preview": "dotenv -e .env.test -- prisma db push",
-    "test:socket": "dotenv -e .env.test -- vitest run --dir tests/socket"
+    "test:socket": "dotenv -e .env.test -- vitest run --dir tests/socket",
+    "test:socket-api": "dotenv -e .env.test -- prisma db push && dotenv -e .env.test -- vitest run --dir tests/socketApi"
   },
   "dependencies": {
     "@prisma/client": "6.19",

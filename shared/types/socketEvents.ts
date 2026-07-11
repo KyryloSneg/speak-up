@@ -32,6 +32,7 @@ export const SocketEvents = {
   REMOVE_USER: "removeUser",
   SEND_MESSAGE: "sendMessage",
   RECEIVED_MESSAGE: "receivedMessage",
+  CHANGED_NICKNAME: "changedNickname",
   DISCONNECTING: "disconnecting",
   DISCONNECT: "disconnect",
 } as const;
@@ -102,6 +103,12 @@ export interface SocketServerToClientEvents {
     ice: SchemaOfZodValidationFn<typeof getZodIceValidation>;
   }) => void;
   [SocketEvents.RECEIVED_MESSAGE]: (data: { message: Message }) => void;
+  [SocketEvents.CHANGED_NICKNAME]: (data: {
+    userId: string;
+    nickname: string;
+    picture?: string;
+    letterPicture?: string;
+  }) => void;
   [SocketResponseEvents.CREATE_ROOM]: (
     data: { id: string } | SocketResponseError,
   ) => void;

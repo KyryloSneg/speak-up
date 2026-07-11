@@ -47,7 +47,6 @@ watch(initialValues, newValues => resetForm({ values: newValues }));
 const isError = computed(() => !!Object.keys(errors.value).length);
 const submit = handleSubmit(async data => {
   if (data.nickname === initialValues.value.nickname) return;
-  // TODO: notify other in-room users about nickname change (server thingy ig)
   const res = await $api.user.changeNickname(data);
 
   if (res.data) {

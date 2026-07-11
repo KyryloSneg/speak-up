@@ -11,6 +11,7 @@ import type {
 } from "@/types/media";
 import type { Room } from "@/types/room";
 import { RoutesWithoutParams } from "@/types/routes";
+import * as updateUserModule from "@/utils/updateUser";
 import {
   SocketEvents,
   SocketResponseEvents,
@@ -33,7 +34,9 @@ describe("roomStore", () => {
     setActivePinia(createPinia());
 
     mockSocket.resetMock();
+
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   function setupCleanupTests(): void {
@@ -388,6 +391,11 @@ describe("roomStore", () => {
 
       describe("ignore", () => {
         it("should ignore received left room event if user isn't in any room", async () => {
+          const roomStore = useRoomStore();
+
+          roomStore.bindEvents();
+          roomStore.bindEvents();
+
           // basically, clearing cleaned-up state does nothing (even if we
           // ignore the handler's main logic)
           await mockSocket.triggerServerEvent(SocketEvents.LEFT_ROOM, {
@@ -407,12 +415,125 @@ describe("roomStore", () => {
           roomStore.room = room;
           mediaStore.roomConfigs = roomConfigs;
 
+          roomStore.bindEvents();
+          roomStore.bindEvents();
+
           await mockSocket.triggerServerEvent(SocketEvents.LEFT_ROOM, {
             id: "anotherId",
           });
 
           expect(roomStore.room).toStrictEqual(room);
           expect(mediaStore.roomConfigs).toStrictEqual(roomConfigs);
+        });
+      });
+    });
+
+    describe("changed nickname", () => {
+      describe("success", () => {
+        it("should properly listen to received changed nickname event (user is the target; nickname, picture + letter picture change)", async () => {
+          const room: Room = {
+            id: "id",
+            users: [
+              mockUser,
+              {
+                id: "anotherId",
+                nickname: "anotherNickname",
+                picture: "anotherPicture",
+                letterPicture: "anotherLetterPicture",
+              },
+            ],
+          } as unknown as Room;
+
+          const authStore = useAuthStore();
+          const roomStore = useRoomStore();
+
+          authStore.user = mockUser;
+          roomStore.room = room;
+
+          roomStore.bindEvents();
+          roomStore.bindEvents();
+
+          const newData = {
+            nickname: `${authStore.user.nickname} 123`,
+            picture: `${authStore.user.picture}_new`,
+            letterPicture: `${authStore.user.letterPicture}_new`,
+          } as const;
+
+          await mockSocket.triggerServerEvent(SocketEvents.CHANGED_NICKNAME, {
+            userId: authStore.user.id,
+            ...newData,
+          });
+
+          const targets = [authStore.user, room.users[0]!] as const;
+
+          targets.forEach(target => {
+            expect(target.nickname).toBe(newData.nickname);
+            expect(target.picture).toBe(newData.picture);
+            expect(target.letterPicture).toBe(newData.letterPicture);
+          });
+
+          expect(roomStore.room.users[1]).toStrictEqual(room.users[1]);
+        });
+
+        it("should properly listen to received changed nickname event (other user is the target; just a nickname change)", async () => {
+          const anotherUser = {
+            id: "anotherId",
+            nickname: "anotherNickname",
+            picture: "anotherPicture",
+            letterPicture: "anotherLetterPicture",
+          } as unknown as UserDto;
+
+          const room: Room = {
+            id: "id",
+            users: [mockUser, anotherUser],
+          } as unknown as Room;
+
+          const authStore = useAuthStore();
+          const roomStore = useRoomStore();
+
+          authStore.user = mockUser;
+          roomStore.room = room;
+
+          roomStore.bindEvents();
+          roomStore.bindEvents();
+
+          const newData = {
+            nickname: `${anotherUser.nickname}_123`,
+          } as const;
+
+          await mockSocket.triggerServerEvent(SocketEvents.CHANGED_NICKNAME, {
+            userId: anotherUser?.id,
+            ...newData,
+          });
+
+          expect(room.users[1]!.nickname).toBe(newData.nickname);
+          expect(room.users[1]!.picture).toBe(anotherUser.picture);
+          expect(room.users[1]!.letterPicture).toBe(anotherUser.letterPicture);
+
+          expect(roomStore.room.users[0]).toStrictEqual(mockUser);
+          expect(authStore.user).toStrictEqual(mockUser);
+        });
+      });
+
+      describe("ignore", () => {
+        it("should ignore received changed nickname event if user isn't in any room and event's target is not this user", async () => {
+          const updateUserSpy = vi.spyOn(updateUserModule, "default");
+
+          const authStore = useAuthStore();
+          const roomStore = useRoomStore();
+
+          authStore.user = mockUser;
+
+          roomStore.bindEvents();
+          roomStore.bindEvents();
+
+          await mockSocket.triggerServerEvent(SocketEvents.CHANGED_NICKNAME, {
+            userId: `${authStore.user.id}123`,
+            nickname: "newNickname",
+          });
+
+          expect(authStore.user).toStrictEqual(mockUser);
+          expect(updateUserSpy).not.toHaveBeenCalled(); // just in case
         });
       });
     });
