@@ -1,5 +1,8 @@
 import { style } from "@vanilla-extract/css";
 
+export const paddingInline = "1rem";
+export const paddingBlock = "0.5rem";
+
 export const header = style({
   display: "flex",
   alignItems: "center",

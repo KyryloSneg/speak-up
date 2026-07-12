@@ -1,5 +1,4 @@
 import type { VideoCodecMimeType } from "@/types/media";
-import { APP_NAME } from "@speak-up/shared";
 
 export const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
@@ -20,5 +19,5 @@ export const PREFERRED_VIDEO_CODECS: VideoCodecMimeType[] = [
   "video/VP9",
 ];
 
-export const HOME_VIEW_HEADING = "Conferences and videomeetups for everyone";
-export const HOME_VIEW_DETAILS = `${APP_NAME} provides you and your colleagues with flawless connection`;
+export const roomChatId = "room-chat";
+export const memberListId = "member-list";

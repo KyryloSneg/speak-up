@@ -16,11 +16,17 @@ export const useRoomStore = defineStore("room", () => {
   const roomIdUserIsTryingToJoin = ref<Room["id"] | null>(null);
   const isJoining = ref(false);
 
+  const isChatOpened = ref(false);
+  const isMemberListOpened = ref(false);
+
   function cleanup(isToRedirect: boolean = true): void {
     const mediaStore = useMediaStore();
 
     room.value = null;
     mediaStore.roomConfigs = null;
+
+    isChatOpened.value = false;
+    isMemberListOpened.value = false;
 
     if (isToRedirect) router.push(RoutesWithoutParams.HOME);
   }
@@ -133,6 +139,8 @@ export const useRoomStore = defineStore("room", () => {
     room,
     roomIdUserIsTryingToJoin,
     isJoining,
+    isChatOpened,
+    isMemberListOpened,
     cleanup,
     bindEvents,
     createRoom,

@@ -26,6 +26,7 @@ export const useMediaStore = defineStore("media", () => {
   );
 
   const userAudioTrack = shallowRef<MediaStreamTrack | null>(null);
+  const userVideoTrack = shallowRef<MediaStreamTrack | null>(null);
 
   const config = ref<SocketMediaConfig>({ audio: true, video: true });
   const isCameraFlipped = ref(false);
@@ -81,6 +82,8 @@ export const useMediaStore = defineStore("media", () => {
       return;
     }
 
+    if (!config.value.audio && !config.value.video) return;
+
     const onError: StartUserMediaOnError = info => {
       toast.error(info.message);
     };
@@ -106,6 +109,8 @@ export const useMediaStore = defineStore("media", () => {
 
   function start(): void {
     if (hasStartedMedia.value) return;
+    if (!config.value.audio && !config.value.video) return;
+
     hasStartedMedia.value = true;
 
     let errorsAmount = 0;
@@ -139,8 +144,12 @@ export const useMediaStore = defineStore("media", () => {
       .off(MediaDeviceEvents.USER_MEDIA_STREAM)
       .on(MediaDeviceEvents.USER_MEDIA_STREAM, stream => {
         userMediaStream.value = stream as MediaDevice["userMediaStream"];
+
         userAudioTrack.value =
           userMediaStream.value?.getAudioTracks()[0] || null;
+
+        userVideoTrack.value =
+          userMediaStream.value?.getVideoTracks()[0] || null;
       });
 
     const audioConstraints: MediaTrackConstraints = {
@@ -199,6 +208,7 @@ export const useMediaStore = defineStore("media", () => {
     devices,
     userMediaStream,
     userAudioTrack,
+    userVideoTrack,
     config,
     isCameraFlipped,
     roomConfigs,
