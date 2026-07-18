@@ -121,7 +121,7 @@ export interface SocketServerToClientEvents {
   [SocketResponseEvents.SEND_SDP]: (data: SocketResponseError) => void;
   [SocketResponseEvents.REMOVE_USER]: (data: SocketResponseError) => void;
   [SocketResponseEvents.SEND_MESSAGE]: (
-    data: { message: Message } | SocketResponseError,
+    data: { message: Message } | (SocketResponseError & { tempId?: string }),
   ) => void;
 }
 

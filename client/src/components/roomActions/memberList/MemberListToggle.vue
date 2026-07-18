@@ -1,14 +1,13 @@
 <template>
   <BaseAsideToggle
-    :value="roomStore.isMemberListOpened"
+    :value
     :aria-controls="memberListId"
-    :aria-expanded="roomStore.isMemberListOpened"
-    :aria-label="
-      roomStore.isMemberListOpened ? 'Close member list' : 'Open member list'
-    "
-    @click="roomStore.isMemberListOpened = !roomStore.isMemberListOpened"
+    :aria-expanded="value"
+    :aria-label="value ? 'Close member list' : 'Open member list'"
+    :id="memberListToggleId"
+    @click="toggle"
   >
-    <PanelRightClose v-if="roomStore.isMemberListOpened" />
+    <PanelRightClose v-if="value" />
     <Users v-else />
   </BaseAsideToggle>
 </template>
@@ -16,8 +15,15 @@
 <script setup lang="ts">
 import BaseAsideToggle from "@/components/roomActions/base/BaseAsideToggle.vue";
 import { useRoomStore } from "@/stores/room";
-import { memberListId } from "@/utils/consts";
+import { memberListId, memberListToggleId } from "@/utils/consts";
 import { PanelRightClose, Users } from "@lucide/vue";
+import { computed } from "vue";
+
+function toggle() {
+  roomStore.openedWindow =
+    roomStore.openedWindow === "memberList" ? null : "memberList";
+}
 
 const roomStore = useRoomStore();
+const value = computed(() => roomStore.openedWindow === "memberList");
 </script>

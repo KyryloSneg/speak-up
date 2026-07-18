@@ -19,5 +19,10 @@ export const PREFERRED_VIDEO_CODECS: VideoCodecMimeType[] = [
   "video/VP9",
 ];
 
+export const roomChatToggleId = "room-chat-toggle";
+export const memberListToggleId = "member-list-toggle";
+
 export const roomChatId = "room-chat";
 export const memberListId = "member-list";
+
+export const roomChatInputId = "room-chat-input";

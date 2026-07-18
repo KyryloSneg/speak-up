@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import type { ComponentAs } from "@/types/props";
 import { cn } from "@/utils/shadcn/utils";
 import type { HTMLAttributes } from "vue";
 
-const props = defineProps<{
+export interface Props {
   class?: HTMLAttributes["class"];
-}>();
+  as?: ComponentAs;
+}
+
+const props = withDefaults(defineProps<Props>(), { as: "div" });
 </script>
 
 <template>
-  <div
+  <component
     data-slot="card"
     :class="
       cn(
@@ -16,7 +20,8 @@ const props = defineProps<{
         props.class,
       )
     "
+    :is="props.as"
   >
     <slot />
-  </div>
+  </component>
 </template>

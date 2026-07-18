@@ -1,6 +1,7 @@
 import getRoomSockets from "#services/getRoomSockets.ts";
 import type { Room } from "#types/room.ts";
 import type { IO, IOSocket } from "#types/socket.ts";
+import deleteRoom from "#utils/deleteRoom.ts";
 import emitRoomEvent from "#utils/emitRoomEvent.ts";
 import getRoomIdOfUser from "#utils/getRoomIdOfUser.ts";
 import getUserRoom from "#utils/getUserRoom.ts";
@@ -58,7 +59,7 @@ async function leaveRoom(
       ]);
     }
   } else if (optionsToUse.isToDeleteRoomOnEmpty) {
-    rooms.delete(roomIdToLeave);
+    deleteRoom(roomIdToLeave);
   }
 
   return leftRoom;

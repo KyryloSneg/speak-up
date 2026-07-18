@@ -33,5 +33,7 @@ globalStyle(":root", {
 
     "--radius": "0.625rem",
     "--default-transition-duration": "200ms",
+    "--transition-timing-function-fast-out-slow-in":
+      "cubic-bezier(0.4, 0, 0.2, 1)",
   },
 });

@@ -22,7 +22,7 @@ function useSingleUserMediaStream(
 
   const fallback = useSingleUserMediaStreamFallback(type, true);
 
-  const result = computed<SingleUserMediaStreamData>(prevResult => {
+  const result = computed<SingleUserMediaStreamData>(() => {
     let value: SingleUserMediaStreamData;
 
     const storeRefs = storeToRefs(mediaStore);

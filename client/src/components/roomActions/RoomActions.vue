@@ -15,11 +15,15 @@
     <li>
       <MemberListToggle />
     </li>
+    <li>
+      <LeaveRoom />
+    </li>
   </ul>
 </template>
 
 <script setup lang="ts">
 import ChatToggle from "@/components/roomActions/chat/ChatToggle.vue";
+import LeaveRoom from "@/components/roomActions/leave/LeaveRoom.vue";
 import MemberListToggle from "@/components/roomActions/memberList/MemberListToggle.vue";
 import CameraToggle from "@/components/userMedia/buttons/cameraToggle/CameraToggle.vue";
 import FlipCamera from "@/components/userMedia/buttons/flipCamera/FlipCamera.vue";

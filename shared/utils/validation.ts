@@ -191,7 +191,14 @@ export function getZodRemoveUserDataValidation() {
 }
 
 export function getZodSendMessageDataValidation() {
-  return z.object({ content: getZodMessageContentValidation() }).strict();
+  return z.array(
+    z
+      .object({
+        tempId: getZodIdValidation(),
+        content: getZodMessageContentValidation(),
+      })
+      .strict(),
+  );
 }
 
 // utils

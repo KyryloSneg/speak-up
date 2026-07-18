@@ -1,4 +1,5 @@
 import type { RecipeVariantsProps } from "@/styles/recipe";
+import { appGridSpacing } from "@/utils/styleConsts";
 import { createVar, style, type StyleRule } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 
@@ -9,7 +10,7 @@ export const section = recipe({
   variants: {
     width: {
       full: { width: "100%" },
-      adaptive: { width: "calc(100% - 1.75rem)" },
+      adaptive: { width: `calc(100% - ${appGridSpacing} * 2)` },
     },
   },
   base: {

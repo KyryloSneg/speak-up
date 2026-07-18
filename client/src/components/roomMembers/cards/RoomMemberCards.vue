@@ -1,5 +1,7 @@
 <template>
-  <div></div>
+  <div :class="styles.cards"></div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import * as styles from "./RoomMemberCards.css";
+</script>

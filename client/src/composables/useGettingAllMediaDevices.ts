@@ -16,8 +16,6 @@ function useGettingAllMediaDevices() {
       return;
     }
 
-    if (mic !== "granted" && camera !== "granted") return;
-
     // force using always fresh devices here
     // (useDeviceList works fine but it ignores transition from "denied" to
     // "granted" permission states)

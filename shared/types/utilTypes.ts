@@ -6,3 +6,5 @@ export type Invert<T extends Record<PropertyKey, PropertyKey>> = {
 export type EqualKeysAndValues<T extends Record<PropertyKey, unknown>> = {
   [K in keyof T]: K;
 };
+
+export type MapValue<T> = T extends Map<unknown, infer V> ? V : never;

@@ -14,10 +14,11 @@ import { toast } from "vue-sonner";
 export const useRoomStore = defineStore("room", () => {
   const room = ref<Room | null>(null);
   const roomIdUserIsTryingToJoin = ref<Room["id"] | null>(null);
-  const isJoining = ref(false);
 
-  const isChatOpened = ref(false);
-  const isMemberListOpened = ref(false);
+  const isJoining = ref(false);
+  const isToSupressLeaveConfirm = ref(false);
+
+  const openedWindow = ref<"chat" | "memberList" | null>(null);
 
   function cleanup(isToRedirect: boolean = true): void {
     const mediaStore = useMediaStore();
@@ -25,10 +26,12 @@ export const useRoomStore = defineStore("room", () => {
     room.value = null;
     mediaStore.roomConfigs = null;
 
-    isChatOpened.value = false;
-    isMemberListOpened.value = false;
+    openedWindow.value = null;
 
-    if (isToRedirect) router.push(RoutesWithoutParams.HOME);
+    if (isToRedirect) {
+      isToSupressLeaveConfirm.value = true;
+      router.push(RoutesWithoutParams.HOME);
+    }
   }
 
   function bindEvents(): void {
@@ -79,16 +82,22 @@ export const useRoomStore = defineStore("room", () => {
     socket.off(SocketEvents.USER_JOINED).on(SocketEvents.USER_JOINED, data => {
       if (!room.value) return;
       room.value.users.push(data.user);
+
+      toast.info(`User "${data.user.nickname}" joined`);
     });
 
     socket.off(SocketEvents.USER_LEFT).on(SocketEvents.USER_LEFT, data => {
       if (!room.value) return;
+
+      const leftUser = room.value.users.find(user => user.id === data.userId);
       room.value.users = room.value.users.filter(
         user => user.id !== data.userId,
       );
 
       const mediaStore = useMediaStore();
       mediaStore.roomConfigs?.delete(data.userId as RoomMediaConfigUserId);
+
+      if (leftUser) toast.info(`User "${leftUser.nickname}" left`);
     });
 
     socket.off(SocketEvents.LEFT_ROOM).on(SocketEvents.LEFT_ROOM, data => {
@@ -105,7 +114,12 @@ export const useRoomStore = defineStore("room", () => {
             user => user.id === data.userId,
           );
 
-          if (roomUser) updateUser(roomUser, data);
+          if (roomUser) {
+            updateUser(roomUser, data);
+            room.value.messages.forEach(message =>
+              updateUser(message.user, data),
+            );
+          }
         }
 
         // other tabs synchronization
@@ -130,7 +144,11 @@ export const useRoomStore = defineStore("room", () => {
 
   function leaveRoom(isToRedirect: boolean = true): void {
     socket.emit(SocketEvents.LEAVE_ROOM);
-    if (isToRedirect) router.push(RoutesWithoutParams.HOME);
+
+    if (isToRedirect) {
+      isToSupressLeaveConfirm.value = true;
+      router.push(RoutesWithoutParams.HOME);
+    }
 
     cleanup(false);
   }
@@ -139,8 +157,8 @@ export const useRoomStore = defineStore("room", () => {
     room,
     roomIdUserIsTryingToJoin,
     isJoining,
-    isChatOpened,
-    isMemberListOpened,
+    isToSupressLeaveConfirm,
+    openedWindow,
     cleanup,
     bindEvents,
     createRoom,

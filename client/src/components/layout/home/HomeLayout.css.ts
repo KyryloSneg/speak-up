@@ -1,6 +1,7 @@
 import * as styles from "@/components/formCard/FormCard.css";
 import { formCardMaxWidth } from "@/components/formCard/FormCard.css";
 import { globalThemeContract } from "@/styles/theme.css";
+import { appGridSpacing } from "@/utils/styleConsts";
 import { style } from "@vanilla-extract/css";
 
 const pxInRem = 1 / 16;
@@ -10,7 +11,7 @@ const headingTabletBreakpointValueRem = 48;
 const breakpoint = "screen and (min-width: 80rem)";
 
 export const main = style({
-  marginInline: "1.75rem",
+  marginInline: appGridSpacing,
 });
 
 export const headingDetailsWrapper = style({
