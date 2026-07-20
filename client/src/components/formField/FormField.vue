@@ -16,7 +16,20 @@
         :aria-invalid="!!errors.length"
         ref="input"
       />
-      <UIFieldError v-if="errors.length" :errors="errors" />
+      <UIFieldError
+        v-if="preserveErrorSpace || errors.length"
+        :errors="
+          preserveErrorSpace
+            ? errors.length
+              ? errors
+              : ['Placeholder']
+            : errors
+        "
+        :class="cn(preserveErrorSpace && !errors.length && 'invisible')"
+        :aria-hidden="
+          preserveErrorSpace ? !errors.length || undefined : undefined
+        "
+      />
     </UIField>
   </VeeField>
 </template>
@@ -28,6 +41,7 @@ import {
   UIFieldLabel,
 } from "@/components/ui/shadcn/field";
 import { UIInput } from "@/components/ui/shadcn/input";
+import { cn } from "@/utils/shadcn/utils";
 import { StringActions } from "@speak-up/shared";
 import { Field as VeeField } from "vee-validate";
 import { computed, onMounted, useId, useTemplateRef } from "vue";
@@ -37,6 +51,7 @@ const {
   label: origLabel,
   type = "text",
   autofocus = false,
+  preserveErrorSpace = false,
   id,
 } = defineProps<{
   name: string;
@@ -44,6 +59,7 @@ const {
   type?: string;
   placeholder?: string;
   autofocus?: boolean;
+  preserveErrorSpace?: boolean;
   id?: string;
 }>();
 

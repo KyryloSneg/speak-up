@@ -43,7 +43,8 @@ export const card = recipe({
     gridArea: "1 / 1 / 2 / 2",
     display: "grid",
     gridTemplateColumns: "1fr",
-    gridTemplateRows: "auto 1fr auto",
+    gridTemplateRows: "auto 1fr",
+    gridAutoRows: "auto",
     gap: "1rem",
     height: "100%",
     width: roomWindowWidth,
@@ -65,11 +66,13 @@ export const card = recipe({
   defaultVariants: { visibility: "hidden" },
 });
 
+export const contentPadding = "1.5rem";
 export const content = style({
   display: "flex",
   flexDirection: "column",
   height: "100%",
   minHeight: 0,
+  paddingInline: contentPadding,
   overflow: "hidden",
 });
 

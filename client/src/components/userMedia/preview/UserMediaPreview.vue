@@ -4,6 +4,7 @@
     <div :class="styles.preview">
       <UserMediaPreviewBg
         videoAriaLabel="Camera preview"
+        :isLocal="true"
         :videoClass="!mediaStore.config.video && 'invisible'"
       />
       <div :class="styles.overlay">

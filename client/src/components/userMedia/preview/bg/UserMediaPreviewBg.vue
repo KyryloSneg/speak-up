@@ -5,7 +5,9 @@
       playsinline
       muted
       :aria-label="videoAriaLabel"
-      :class="cn(styles.bg, videoClass)"
+      :class="
+        cn(styles.bg({ origin: isLocal ? 'local' : 'remote' }), videoClass)
+      "
       ref="video"
     />
   </div>
@@ -20,6 +22,7 @@ import { useTemplateRef, watchPostEffect, type HTMLAttributes } from "vue";
 import * as styles from "./UserMediaPreviewBg.css";
 
 const props = defineProps<{
+  isLocal?: boolean;
   srcObject?: MediaStream | null;
   videoClass?: HTMLAttributes["class"];
   videoAriaLabel?: HTMLAttributes["aria-label"];

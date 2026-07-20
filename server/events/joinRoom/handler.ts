@@ -87,8 +87,10 @@ async function joinRoomEventHandlerCb(
   }
 
   socket.emit(SocketResponseEvents.JOIN_ROOM, {
+    hostId: room.hostId,
     users: userDtos,
     messages: room.messages,
+    maxMembers: room.maxMembers,
   });
 
   if (isLoudRoomLeave) {

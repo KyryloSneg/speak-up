@@ -20,7 +20,11 @@
     :actionClass="styles.action"
   >
     <UIFieldGroup>
-      <FormField name="maxMembers" :autofocus="true" />
+      <FormField
+        name="maxMembers"
+        :preserveErrorSpace="true"
+        :autofocus="true"
+      />
     </UIFieldGroup>
   </FormCard>
 </template>

@@ -1,5 +1,5 @@
 import useAuthMediaDevicesInitialization from "@/composables/useAuthMediaDevicesInitialization";
-import useIsJoiningRoomCleanup from "@/composables/useIsJoiningRoomCleanup";
+import useCleanups from "@/composables/useCleanups";
 import useRoomBeforeUnload from "@/composables/useRoomBeforeUnload";
 import useUserSynchronization from "@/composables/useUserSynchronization";
 
@@ -7,7 +7,7 @@ function useAppInitialization() {
   useUserSynchronization();
   useAuthMediaDevicesInitialization();
   useRoomBeforeUnload();
-  useIsJoiningRoomCleanup();
+  useCleanups();
 }
 
 export default useAppInitialization;

@@ -6,6 +6,7 @@
       <div :class="styles.previewBgWrapper">
         <UserMediaPreviewBg
           videoAriaLabel="Camera preview"
+          :isLocal="true"
           :srcObject="streamData.stream.value"
         />
       </div>

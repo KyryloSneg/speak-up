@@ -1,5 +1,6 @@
 import { globalThemeContract } from "@/styles/theme.css";
 import { style } from "@vanilla-extract/css";
+import { recipe } from "@vanilla-extract/recipes";
 
 const borderRadius = "calc(var(--radius) * 2)";
 
@@ -29,11 +30,22 @@ export const bgWrapper = style({
   },
 });
 
-export const bg = style({
-  position: "absolute",
-  inset: -1,
-  width: "calc(100% + 1px)",
-  height: "calc(100% + 1px)",
-  objectFit: "cover",
-  borderRadius,
+export const bg = recipe({
+  base: {
+    position: "absolute",
+    inset: -1,
+    width: "calc(100% + 1px)",
+    height: "calc(100% + 1px)",
+    objectFit: "cover",
+    borderRadius,
+  },
+  variants: {
+    origin: {
+      local: {
+        transform: "scaleX(-1)",
+      },
+      remote: {},
+    },
+  },
+  defaultVariants: { origin: "remote" },
 });

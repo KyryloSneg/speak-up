@@ -13,6 +13,8 @@ import { toast } from "vue-sonner";
 
 export const useRoomStore = defineStore("room", () => {
   const room = ref<Room | null>(null);
+
+  const maxMembersOfFutureRoom = ref<Room["maxMembers"] | null>(null);
   const roomIdUserIsTryingToJoin = ref<Room["id"] | null>(null);
 
   const isJoining = ref(false);
@@ -38,11 +40,19 @@ export const useRoomStore = defineStore("room", () => {
     socket
       .off(SocketResponseEvents.CREATE_ROOM)
       .on(SocketResponseEvents.CREATE_ROOM, data => {
+        if (!maxMembersOfFutureRoom.value) return;
+
         if ("error" in data) {
           toast.error(data.error);
         } else {
           const authStore = useAuthStore();
-          room.value = { id: data.id, users: [authStore.user!], messages: [] };
+          room.value = {
+            id: data.id,
+            hostId: authStore.user!.id,
+            users: [authStore.user!],
+            messages: [],
+            maxMembers: maxMembersOfFutureRoom.value,
+          };
 
           router.push(RoutesWithoutParams.ROOM);
         }
@@ -62,8 +72,10 @@ export const useRoomStore = defineStore("room", () => {
 
           room.value = {
             id: roomIdUserIsTryingToJoin.value,
+            hostId: data.hostId,
             users: data.users,
             messages: data.messages,
+            maxMembers: data.maxMembers,
           };
 
           // TODO: start retrieving room configs starting right from here ???
@@ -132,6 +144,8 @@ export const useRoomStore = defineStore("room", () => {
 
   function createRoom(maxMembers: number): void {
     socket.emit(SocketEvents.CREATE_ROOM, { maxMembers });
+    maxMembersOfFutureRoom.value = maxMembers;
+
     isJoining.value = true;
   }
 
@@ -155,6 +169,7 @@ export const useRoomStore = defineStore("room", () => {
 
   return {
     room,
+    maxMembersOfFutureRoom,
     roomIdUserIsTryingToJoin,
     isJoining,
     isToSupressLeaveConfirm,

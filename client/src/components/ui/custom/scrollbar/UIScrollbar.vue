@@ -34,6 +34,16 @@ const exposed = {
 
 defineExpose<UIScrollbarTemplateRef>(exposed);
 
+function focusin(e: FocusEvent): void {
+  const isFocusVisible = (e.target as HTMLElement | null)?.matches(
+    ":focus-visible",
+  ) as boolean | undefined;
+
+  if (typeof isFocusVisible === "boolean") {
+    hasFocus.value = isFocusVisible;
+  }
+}
+
 function focusout(e: FocusEvent): void {
   const relatedTarget = e.relatedTarget as HTMLElement | null;
   if (relatedTarget && exposed.viewport?.contains(relatedTarget)) return;
@@ -45,7 +55,7 @@ function focusout(e: FocusEvent): void {
 <template>
   <ScrollAreaRoot
     :type="hasFocus ? 'auto' : 'glimpse'"
-    @focusin="hasFocus = true"
+    @focusin="focusin"
     @focusout="focusout"
     :class="cn('relative overflow-hidden h-full w-full', props.class)"
     v-bind="$attrs"

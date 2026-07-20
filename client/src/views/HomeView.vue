@@ -20,7 +20,12 @@
     :actionClass="styles.action"
   >
     <UIFieldGroup>
-      <FormField name="id" label="Room id" :autofocus="true" />
+      <FormField
+        name="id"
+        label="Room id"
+        :preserveErrorSpace="true"
+        :autofocus="true"
+      />
     </UIFieldGroup>
   </FormCard>
 </template>

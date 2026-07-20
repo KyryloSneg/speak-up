@@ -113,7 +113,14 @@ export interface SocketServerToClientEvents {
     data: { id: string } | SocketResponseError,
   ) => void;
   [SocketResponseEvents.JOIN_ROOM]: (
-    data: { users: UserDto[]; messages: Message[] } | SocketResponseError,
+    data:
+      | {
+          hostId: string;
+          users: UserDto[];
+          messages: Message[];
+          maxMembers: number;
+        }
+      | SocketResponseError,
   ) => void;
   [SocketResponseEvents.LEAVE_ROOM]: (data: SocketResponseError) => void;
   [SocketResponseEvents.SEND_MEDIA_CONFIG]: (data: SocketResponseError) => void;
