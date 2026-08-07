@@ -1,6 +1,7 @@
 type DefaultEvent = string;
 type EventHandler = (...args: unknown[]) => void;
 
+// TODO: type the values too?
 class Emitter<Event extends DefaultEvent = DefaultEvent> {
   public events: Partial<Record<Event, EventHandler[]>>;
 

@@ -1,3 +1,4 @@
+import formatCommaSeparatedCss from "@/utils/formatCommaSeparatedCss";
 import {
   main,
   mainGap,
@@ -20,10 +21,10 @@ export const windowWrapper = style({
   opacity: 0,
   transform: `translateX(${mainGap})`,
   willChange: "transform, opacity",
-  transition: `
+  transition: formatCommaSeparatedCss(`
     opacity ${transitionConfig},
     transform ${transitionConfig}
-  `.replace(/\s+/g, " "),
+  `),
   selectors: {
     [`${main}[data-window-open="true"] &`]: {
       opacity: 1,
@@ -50,6 +51,7 @@ export const card = recipe({
     width: roomWindowWidth,
     overflow: "hidden",
     transition: "visibility 0s, opacity 0s",
+    boxShadow: "none !important",
   },
   variants: {
     visibility: {

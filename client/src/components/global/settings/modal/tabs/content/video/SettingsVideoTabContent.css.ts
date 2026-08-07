@@ -1,4 +1,7 @@
-import { DEFAULT_ASPECT_RATIO_H, DEFAULT_ASPECT_RATIO_W } from "@/utils/consts";
+import {
+  DEFAULT_ASPECT_RATIO_H,
+  DEFAULT_ASPECT_RATIO_W,
+} from "@/utils/mediaConsts";
 import { style } from "@vanilla-extract/css";
 
 export const previewBgWrapper = style({

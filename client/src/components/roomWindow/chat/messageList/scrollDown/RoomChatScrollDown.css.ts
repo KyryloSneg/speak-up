@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 export const transitionName = `fade-${nanoid()}`;
 export const alertTransitionName = `alert-fade-${nanoid()}`;
 
-const distanceToTheSides = "1rem";
+export const distanceToTheSides = "1rem";
 export const button = style({
   position: "absolute",
   right: distanceToTheSides,
@@ -20,7 +20,7 @@ export const alert = style({
   top: `calc(${alertSize} * -0.35)`,
   right: `calc(${alertSize} * -0.35)`,
   display: "block",
-  aspectRatio: 1,
+  aspectRatio: "1",
   width: alertSize,
   height: alertSize,
   padding: "0.25rem",

@@ -1,5 +1,5 @@
 import type { User } from "#generated/prisma/client.ts";
-import type { Message } from "@speak-up/shared";
+import type { Message, SocketMediaConfig } from "@speak-up/shared";
 
 export interface Room {
   id: string;
@@ -7,4 +7,5 @@ export interface Room {
   removedUserIds: Set<User["id"]>;
   messages: Message[];
   maxMembers: number;
+  mediaConfigs: Map<User["id"], SocketMediaConfig>;
 }

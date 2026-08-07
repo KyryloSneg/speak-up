@@ -1,7 +1,10 @@
+import useAudioNoiseGate from "@/composables/useAudioNoiseGate";
+import useIsVideoActive from "@/composables/useIsVideoActive";
 import MediaDevice, {
   type StartUserMediaOnError,
 } from "@/services/MediaDevice";
 import { useMediaSettingsStore } from "@/stores/mediaSettings";
+import { useWebRTCStore } from "@/stores/webrtc";
 import {
   FacingModes,
   type RoomMediaConfigs,
@@ -21,9 +24,13 @@ import { toast } from "vue-sonner";
 
 export const useMediaStore = defineStore("media", () => {
   const devices = ref<MediaDeviceInfo[]>([]);
-  const userMediaStream = shallowRef<MediaDevice["userMediaStream"] | null>(
+  const rawUserMediaStream = shallowRef<MediaDevice["userMediaStream"] | null>(
     null,
   );
+
+  const screenSharingStream = shallowRef<
+    MediaDevice["screenSharingStream"] | null
+  >(null);
 
   const userAudioTrack = shallowRef<MediaStreamTrack | null>(null);
   const userVideoTrack = shallowRef<MediaStreamTrack | null>(null);
@@ -143,13 +150,11 @@ export const useMediaStore = defineStore("media", () => {
     mediaDevice
       .off(MediaDeviceEvents.USER_MEDIA_STREAM)
       .on(MediaDeviceEvents.USER_MEDIA_STREAM, stream => {
-        userMediaStream.value = stream as MediaDevice["userMediaStream"];
-
-        userAudioTrack.value =
-          userMediaStream.value?.getAudioTracks()[0] || null;
+        const typedStream = stream as MediaDevice["userMediaStream"];
+        rawUserMediaStream.value = typedStream;
 
         userVideoTrack.value =
-          userMediaStream.value?.getVideoTracks()[0] || null;
+          rawUserMediaStream.value?.getVideoTracks()[0] || null;
       });
 
     const audioConstraints: MediaTrackConstraints = {
@@ -191,11 +196,32 @@ export const useMediaStore = defineStore("media", () => {
     );
   }
 
+  function startScreenSharing(): void {
+    mediaDevice
+      .off(MediaDeviceEvents.SCREEN_SHARING_STREAM)
+      .on(MediaDeviceEvents.SCREEN_SHARING_STREAM, stream => {
+        const typedStream = stream as MediaDevice["screenSharingStream"];
+        screenSharingStream.value = typedStream;
+
+        const webRTCStore = useWebRTCStore();
+        webRTCStore.sendScreenSharing(typedStream);
+      });
+
+    mediaDevice.startScreenSharing(info => toast.error(info.message));
+  }
+
+  function stopScreenSharing(): void {
+    mediaDevice.stopScreenSharing();
+  }
+
   function stop(): void {
     hasStartedMedia.value = false;
+
+    stopScreenSharing();
     mediaDevice.stop();
   }
 
+  const userMediaStream = useAudioNoiseGate(rawUserMediaStream);
   const microphones = computed(() =>
     devices.value.filter(device => device?.kind === "audioinput"),
   );
@@ -204,17 +230,22 @@ export const useMediaStore = defineStore("media", () => {
     devices.value.filter(device => device?.kind === "videoinput"),
   );
 
+  const isSharingScreen = useIsVideoActive(screenSharingStream);
+
   return {
     devices,
-    userMediaStream,
+    rawUserMediaStream,
+    screenSharingStream,
     userAudioTrack,
     userVideoTrack,
     config,
     isCameraFlipped,
     roomConfigs,
     hasStartedMedia,
+    userMediaStream,
     microphones,
     cameras,
+    isSharingScreen,
     bindEvents,
     sendMediaConfig,
     toggleMic,
@@ -222,6 +253,8 @@ export const useMediaStore = defineStore("media", () => {
     flipCamera,
     updateDevices,
     start,
+    startScreenSharing,
+    stopScreenSharing,
     stop,
   };
 });

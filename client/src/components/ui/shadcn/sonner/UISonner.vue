@@ -39,13 +39,13 @@ const props = defineProps<ToasterProps>();
     }"
   >
     <template #success-icon>
-      <CircleCheckIcon class="size-4 text-green-500" />
+      <CircleCheckIcon class="size-4 text-success" />
     </template>
     <template #info-icon>
-      <InfoIcon class="size-4 text-blue-500" />
+      <InfoIcon class="size-4 text-accent-foreground" />
     </template>
     <template #warning-icon>
-      <TriangleAlertIcon class="size-4 text-amber-500" />
+      <TriangleAlertIcon class="size-4 text-warning" />
     </template>
     <template #error-icon>
       <OctagonXIcon class="size-4 text-destructive" />

@@ -86,11 +86,14 @@ async function joinRoomEventHandlerCb(
     throw e;
   }
 
+  room.mediaConfigs.set(socket.data.userId, data.mediaConfig);
+
   socket.emit(SocketResponseEvents.JOIN_ROOM, {
     hostId: room.hostId,
     users: userDtos,
     messages: room.messages,
     maxMembers: room.maxMembers,
+    mediaConfigs: Object.fromEntries(room.mediaConfigs.entries()),
   });
 
   if (isLoudRoomLeave) {
@@ -99,7 +102,7 @@ async function joinRoomEventHandlerCb(
       io,
       data.id,
       SocketEvents.USER_JOINED,
-      [{ user: userDto! }],
+      [{ user: userDto!, mediaConfig: data.mediaConfig }],
       [socket.id],
     );
   }

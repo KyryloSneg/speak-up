@@ -4,7 +4,7 @@
     <div :class="baseStyles.selectPreviewWrapper">
       <CameraSelect />
       <div :class="styles.previewBgWrapper">
-        <UserMediaPreviewBg
+        <MediaBg
           videoAriaLabel="Camera preview"
           :isLocal="true"
           :srcObject="streamData.stream.value"
@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import UserMediaPreviewBg from "@/components/userMedia/preview/bg/UserMediaPreviewBg.vue";
+import MediaBg from "@/components/userMedia/bg/MediaBg.vue";
 import CameraSelect from "@/components/userMedia/selects/camera/CameraSelect.vue";
 import useSingleUserMediaStream from "@/composables/useSingleUserMediaStream";
 import * as baseStyles from "../base.css";

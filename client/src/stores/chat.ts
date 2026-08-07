@@ -33,7 +33,6 @@ export const useChatStore = defineStore("chat", () => {
       scrolledPx.value > (areNewMessages.value ? 10 : 200);
   });
 
-
   const newMessages = useNewMessages(() => scrolledPx.value < 10);
   const newMessagesUserIds = computed(() =>
     Array.from(new Set(newMessages.value.map(message => message.userId))),

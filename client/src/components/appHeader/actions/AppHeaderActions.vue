@@ -3,7 +3,14 @@
     <li>
       <SettingsModal v-if="isToShowSettings" />
     </li>
-    <li>
+    <li
+      :class="
+        cn(
+          route.name === RouteToName[Routes.ROOM] &&
+            'max-full-room-header:hidden',
+        )
+      "
+    >
       <ThemeToggle />
     </li>
   </ul>
@@ -12,6 +19,8 @@
 <script setup lang="ts">
 import SettingsModal from "@/components/global/settings/modal/SettingsModal.vue";
 import ThemeToggle from "@/components/themeToggle/ThemeToggle.vue";
+import { Routes, RouteToName } from "@/types/routes";
+import { cn } from "@/utils/shadcn/utils";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import * as styles from "./AppHeaderActions.css";

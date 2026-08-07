@@ -1,8 +1,8 @@
 <template>
   <UIButton
     size="icon-lg"
-    variant="ghost"
-    aria-expanded="true"
+    variant="ghostDestructive"
+    :aria-expanded="!!roomStore.openedWindow"
     @click="roomStore.openedWindow = null"
   >
     <X />

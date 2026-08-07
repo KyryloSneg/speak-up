@@ -22,6 +22,7 @@ import SettingsButton from "@/components/global/settings/button/SettingsButton.v
 import SettingsModalTabs from "@/components/global/settings/modal/tabs/SettingsModalTabs.vue";
 import type { UIButtonProps } from "@/components/ui/shadcn/button";
 import useResponsiveModal from "@/composables/useResponsiveModal";
+import { responsiveModalBreakpoint } from "@/utils/breakpointConsts";
 import { useMediaQuery } from "@vueuse/core";
 import * as styles from "./SettingsModal.css";
 
@@ -29,8 +30,6 @@ defineProps<{
   triggerProps?: UIButtonProps;
 }>();
 
-const breakpoint = "40rem";
-const ResponsiveModal = useResponsiveModal(breakpoint);
-
-const isDesktop = useMediaQuery(`(min-width: ${breakpoint})`);
+const ResponsiveModal = useResponsiveModal();
+const isDesktop = useMediaQuery(`(min-width: ${responsiveModalBreakpoint})`);
 </script>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComponentAs } from "@/types/props";
 import { cn } from "@/utils/shadcn/utils";
-import type { HTMLAttributes } from "vue";
+import { useTemplateRef, type HTMLAttributes } from "vue";
 
 export interface Props {
   class?: HTMLAttributes["class"];
@@ -9,6 +9,11 @@ export interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), { as: "div" });
+const cardRef = useTemplateRef("card");
+
+defineExpose({
+  $el: cardRef,
+});
 </script>
 
 <template>
@@ -21,6 +26,7 @@ const props = withDefaults(defineProps<Props>(), { as: "div" });
       )
     "
     :is="props.as"
+    ref="card"
   >
     <slot />
   </component>

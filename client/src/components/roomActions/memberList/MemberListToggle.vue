@@ -1,29 +1,31 @@
 <template>
-  <BaseAsideToggle
-    :value
-    :aria-controls="memberListId"
-    :aria-expanded="value"
-    :aria-label="value ? 'Close member list' : 'Open member list'"
-    :id="memberListToggleId"
-    @click="toggle"
-  >
-    <PanelRightClose v-if="value" />
-    <Users v-else />
-  </BaseAsideToggle>
+  <RoomMemberListTrigger :isToggle="true" v-slot="slotProps">
+    <BaseAsideToggle
+      v-bind="getAriaAttributesFromProps(slotProps)"
+      :value="slotProps.value"
+      :size
+      :data-id="slotProps.dataId"
+      :id="memberListToggleId"
+      @click="slotProps.click"
+    >
+      <PanelRightClose v-if="!slotProps.isDialog && slotProps.value" />
+      <Users v-else />
+    </BaseAsideToggle>
+  </RoomMemberListTrigger>
 </template>
 
 <script setup lang="ts">
 import BaseAsideToggle from "@/components/roomActions/base/BaseAsideToggle.vue";
-import { useRoomStore } from "@/stores/room";
-import { memberListId, memberListToggleId } from "@/utils/consts";
+import RoomMemberListTrigger from "@/components/roomMemberListTrigger/RoomMemberListTrigger.vue";
+import type { ButtonVariants } from "@/components/ui/shadcn/button";
+import useIsRoomOpenedWindow from "@/composables/useIsRoomOpenedWindow";
+import getAriaAttributesFromProps from "@/utils/getAriaAttributesFromProps";
+import { memberListToggleId } from "@/utils/idConsts";
 import { PanelRightClose, Users } from "@lucide/vue";
-import { computed } from "vue";
 
-function toggle() {
-  roomStore.openedWindow =
-    roomStore.openedWindow === "memberList" ? null : "memberList";
-}
+defineProps<{
+  size: ButtonVariants["size"];
+}>();
 
-const roomStore = useRoomStore();
-const value = computed(() => roomStore.openedWindow === "memberList");
+const isOpenedWindow = useIsRoomOpenedWindow();
 </script>

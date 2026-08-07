@@ -1,5 +1,6 @@
 import { useHostStore } from "@/stores/host";
 import { useRoomStore } from "@/stores/room";
+import { ROOM_STATE_CLEANUP_DEBOUNCE_MS } from "@/utils/consts";
 import { useDebounceFn } from "@vueuse/core";
 import { watch } from "vue";
 
@@ -11,7 +12,10 @@ function useUserIdsToRemoveCleanup() {
     hostStore.userIdsToRemove = [];
   }
 
-  const debouncedCleanup = useDebounceFn(cleanup, 5000);
+  const debouncedCleanup = useDebounceFn(
+    cleanup,
+    ROOM_STATE_CLEANUP_DEBOUNCE_MS,
+  );
 
   watch(() => roomStore.room?.id, cleanup);
   watch(

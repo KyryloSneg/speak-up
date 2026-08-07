@@ -27,6 +27,9 @@ globalStyle(":root", {
     "--destructive": globalThemeContract.backgroundColor.danger,
     "--destructive-foreground": globalThemeContract.color.onDanger,
 
+    "--warning": globalThemeContract.backgroundColor.warning,
+    "--success": globalThemeContract.outline.activeSpeaker,
+
     "--border": globalThemeContract.border.subtle,
     "--input": globalThemeContract.border.element,
     "--ring": globalThemeContract.outline.focus,

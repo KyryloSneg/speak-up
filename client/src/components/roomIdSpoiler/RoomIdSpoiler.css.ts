@@ -1,4 +1,5 @@
 import { globalThemeContract } from "@/styles/theme.css";
+import formatCommaSeparatedCss from "@/utils/formatCommaSeparatedCss";
 import { keyframes, style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 
@@ -17,6 +18,7 @@ export const dl = style({
   display: "flex",
   alignItems: "stretch",
   gap: "0.625rem",
+  whiteSpace: "nowrap",
 });
 
 export const dt = style({
@@ -30,10 +32,14 @@ export const dd = recipe({
     color: globalThemeContract.color.primary,
     display: "inline-flex",
     alignItems: "center",
+    width: "max-content",
     padding: "0 0.375rem",
     borderRadius: "calc(var(--radius) * 0.5)",
-    transition:
-      "color var(--default-transition-duration) ease, background-color var(--default-transition-duration) ease",
+    transition: formatCommaSeparatedCss(`
+      color var(--default-transition-duration) ease,
+      background-color var(--default-transition-duration) ease
+    `),
+    whiteSpace: "nowrap",
   },
 
   variants: {

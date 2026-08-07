@@ -12,8 +12,10 @@ export const globalThemeContract = createThemeContract({
     muted: "",
     accent: "",
     danger: "",
+    warning: "",
     onAccent: "",
     onDanger: "",
+    onWarning: "",
   },
   backgroundColor: {
     primary: "",
@@ -24,6 +26,8 @@ export const globalThemeContract = createThemeContract({
     accentSubtle: "",
     danger: "",
     dangerSubtle: "",
+    warning: "",
+    warningSubtle: "",
     videoGrid: "",
   },
   border: {
@@ -45,8 +49,10 @@ createGlobalTheme(':root, :root[data-theme="light"]', globalThemeContract, {
     muted: "#d1d5db",
     accent: "#1a73e8",
     danger: "#d93025",
+    warning: "#e37400",
     onAccent: "#ffffff",
     onDanger: "#ffffff",
+    onWarning: "#ffffff",
   },
   backgroundColor: {
     primary: "#ffffff",
@@ -57,6 +63,8 @@ createGlobalTheme(':root, :root[data-theme="light"]', globalThemeContract, {
     accentSubtle: "#e8f0fe",
     danger: "#d93025",
     dangerSubtle: "#fce8e6",
+    warning: "#f29900",
+    warningSubtle: "#fef7e0",
     videoGrid: "#202124",
   },
   border: {
@@ -78,8 +86,10 @@ createGlobalTheme(':root[data-theme="dark"]', globalThemeContract, {
     muted: "#5f6368",
     accent: "#8ab4f8",
     danger: "#f28b82",
+    warning: "#fdd663",
     onAccent: "#1f2937",
     onDanger: "#ffffff",
+    onWarning: "#202124",
   },
   backgroundColor: {
     primary: "#202124",
@@ -90,6 +100,8 @@ createGlobalTheme(':root[data-theme="dark"]', globalThemeContract, {
     accentSubtle: "#304972",
     danger: "#ea4335",
     dangerSubtle: "#5c2522",
+    warning: "#f9ab00",
+    warningSubtle: "#534611",
     videoGrid: "#111214",
   },
   border: {

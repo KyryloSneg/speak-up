@@ -1,7 +1,7 @@
 <template>
   <div :class="styles.wrapper">
     <dl :class="styles.dl">
-      <dt :class="styles.dt">Room id:</dt>
+      <dt :class="cn(styles.dt, 'max-full-room-header:sr-only')">Room id:</dt>
       <dd
         aria-live="polite"
         :class="
@@ -18,7 +18,12 @@
     </dl>
     <div :class="styles.buttonGroup">
       <UIButton
-        :class="styles.revealButton"
+        :class="
+          cn(
+            styles.revealButton,
+            'max-full-room-header:text-sm max-full-room-header:min-w-16.25!',
+          )
+        "
         :aria-controls="ddId"
         :aria-expanded="!isHidden"
         @click="toggleHidden"

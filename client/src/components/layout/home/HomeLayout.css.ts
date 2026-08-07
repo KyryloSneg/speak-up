@@ -1,10 +1,9 @@
 import * as styles from "@/components/formCard/FormCard.css";
 import { formCardMaxWidth } from "@/components/formCard/FormCard.css";
 import { globalThemeContract } from "@/styles/theme.css";
-import { appGridSpacing } from "@/utils/styleConsts";
+import { appGridSpacing, pxInRem } from "@/utils/styleConsts";
 import { style } from "@vanilla-extract/css";
 
-const pxInRem = 1 / 16;
 const headingBigMobileBreakpointValueRem = 26.25;
 const headingTabletBreakpointValueRem = 48;
 

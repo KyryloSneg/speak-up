@@ -14,6 +14,7 @@
         <FormField name="nickname" :placeholder="initialValues.nickname" />
       </UIFieldGroup>
     </FormCard>
+    <!-- TODO: theme + logout -->
   </section>
 </template>
 

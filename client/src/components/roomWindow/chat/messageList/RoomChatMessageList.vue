@@ -12,7 +12,7 @@
       <Frown />
       Nobody hasn't discussed today's mood
     </p>
-    <RoomChatScrollDown :scrollTemplate="scrollTemplateRef" />
+    <RoomChatScrollDown />
   </UIScrollbar>
 </template>
 
@@ -26,5 +26,5 @@ import { Frown } from "@lucide/vue";
 import * as styles from "./RoomChatMessageList.css";
 
 const messageStore = useMessageStore();
-const scrollTemplateRef = useHandlingNewChatMessages("scroll");
+useHandlingNewChatMessages("scroll");
 </script>

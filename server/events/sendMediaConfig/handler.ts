@@ -3,6 +3,7 @@ import { SocketResponseErrorMessages } from "#types/socketResponseErrorMessages.
 import catchEventHandlerErrorDecorator from "#utils/catchEventHandlerErrorDecorator.ts";
 import emitRoomEvent from "#utils/emitRoomEvent.ts";
 import getRoomIdOfUser from "#utils/getRoomIdOfUser.ts";
+import rooms from "#utils/rooms.ts";
 import {
   getZodSendMediaConfigDataValidation,
   SocketEvents,
@@ -35,6 +36,10 @@ async function sendMediaConfigEventHandlerCb(
   }
 
   const data = validationResult.data;
+  const room = rooms.get(roomId);
+
+  room?.mediaConfigs.set(socket.data.userId, data.config);
+
   emitRoomEvent(
     io,
     roomId,

@@ -1,4 +1,5 @@
 import { globalThemeContract } from "@/styles/theme.css";
+import formatCommaSeparatedCss from "@/utils/formatCommaSeparatedCss";
 import { globalStyle, style } from "@vanilla-extract/css";
 
 export const wrapper = style({
@@ -12,8 +13,10 @@ export const wrapper = style({
   paddingLeft: "1rem",
   borderRadius: "1rem",
   border: `1px solid ${globalThemeContract.border.element}`,
-  transition:
-    "border-color var(--default-transition-duration) ease, box-shadow var(--default-transition-duration) ease",
+  transition: formatCommaSeparatedCss(`
+    border-color var(--default-transition-duration) ease,
+    box-shadow var(--default-transition-duration) ease
+  `),
 
   selectors: {
     "&:focus-within": {

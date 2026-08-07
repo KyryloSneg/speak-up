@@ -50,6 +50,8 @@ async function leaveRoom(
   const roomSockets = await getRoomSockets(io, roomIdToLeave);
   const leftRoom = rooms.get(roomIdToLeave);
 
+  leftRoom?.mediaConfigs.delete(socket.data.userId);
+
   if (roomSockets.length) {
     if (optionsToUse.isToNotifyRoom) {
       emitRoomEvent(io, roomIdToLeave, SocketEvents.USER_LEFT, [

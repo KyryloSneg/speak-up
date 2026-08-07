@@ -15,7 +15,8 @@
         :aria-invalid="!!error"
         :aria-describbedby="isErrorShown ? errorId : undefined"
         :class="styles.textarea"
-        :id="roomChatInputId"
+        :data-id="roomChatInputId"
+        autofocus
       />
       <p
         v-if="isErrorShown"
@@ -46,7 +47,7 @@ import UISeparator from "@/components/ui/shadcn/separator/UISeparator.vue";
 import { UITextarea } from "@/components/ui/shadcn/textarea";
 import { useChatStore } from "@/stores/chat";
 import { useMessageStore } from "@/stores/message";
-import { roomChatInputId } from "@/utils/consts";
+import { roomChatInputId } from "@/utils/idConsts";
 import { cn } from "@/utils/shadcn/utils";
 import { SendHorizontal } from "@lucide/vue";
 import { getZodTextMessageContentPartValueValidation } from "@speak-up/shared";

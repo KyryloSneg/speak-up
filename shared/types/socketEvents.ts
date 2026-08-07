@@ -86,7 +86,10 @@ export interface SocketClientToServerEvents {
 }
 
 export interface SocketServerToClientEvents {
-  [SocketEvents.USER_JOINED]: (data: { user: UserDto }) => void;
+  [SocketEvents.USER_JOINED]: (data: {
+    user: UserDto;
+    mediaConfig: SocketMediaConfig;
+  }) => void;
   [SocketEvents.USER_LEFT]: (data: { userId: string }) => void;
   [SocketEvents.LEFT_ROOM]: (data: { id: string }) => void;
   [SocketEvents.RECEIVED_MEDIA_CONFIG]: (data: {
@@ -97,6 +100,7 @@ export interface SocketServerToClientEvents {
     userId: string;
     sdp: string;
     type: "offer" | "answer";
+    screenSharingStreamId?: string | null;
   }) => void;
   [SocketEvents.RECEIVED_ICE]: (data: {
     userId: string;
@@ -119,6 +123,7 @@ export interface SocketServerToClientEvents {
           users: UserDto[];
           messages: Message[];
           maxMembers: number;
+          mediaConfigs: Record<string, SocketMediaConfig>;
         }
       | SocketResponseError,
   ) => void;

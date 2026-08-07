@@ -41,6 +41,10 @@
   );
 }
 
+@theme {
+  --breakpoint-full-room-header: 30rem;
+}
+
 /* shadcn overrides */
 @layer base {
   button:not(:disabled),

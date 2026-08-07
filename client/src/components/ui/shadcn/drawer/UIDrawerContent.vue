@@ -1,9 +1,10 @@
 <script lang="ts" setup>
+import { FOCUSABLE_SELECTOR } from "@/utils/consts";
 import { cn } from "@/utils/shadcn/utils";
 import type { DialogContentEmits, DialogContentProps } from "reka-ui";
 import { useForwardPropsEmits } from "reka-ui";
 import { DrawerContent, DrawerPortal } from "vaul-vue";
-import type { HTMLAttributes } from "vue";
+import { type HTMLAttributes } from "vue";
 import UIDrawerOverlay from "./UIDrawerOverlay.vue";
 
 defineOptions({
@@ -16,6 +17,16 @@ const props = defineProps<
 
 const emits = defineEmits<DialogContentEmits>();
 const forwarded = useForwardPropsEmits(props, emits);
+
+const handleAutofocus = (e: Event) => {
+  e.preventDefault();
+
+  const elements = Array.from(
+    (e.target as HTMLElement).querySelectorAll(FOCUSABLE_SELECTOR),
+  ) as HTMLElement[];
+
+  elements[0]?.focus();
+};
 </script>
 
 <template>
@@ -34,6 +45,7 @@ const forwarded = useForwardPropsEmits(props, emits);
           props.class,
         )
       "
+      @open-auto-focus="handleAutofocus"
     >
       <div
         class="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block"

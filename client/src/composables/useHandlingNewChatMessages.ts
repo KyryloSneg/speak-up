@@ -1,4 +1,3 @@
-import type { UIScrollbarTemplateRef } from "@/components/ui/custom/scrollbar/UIScrollbar.vue";
 import useAreNewMessagesIndicator from "@/composables/useAreNewMessagesIndicator";
 import useChatAutoScroll from "@/composables/useChatAutoScroll";
 import useChatIsScrollDownButton from "@/composables/useChatIsScrollDownButton";
@@ -11,7 +10,7 @@ export type NewMessagesUserIds = Message["userId"][] | null;
 function useHandlingNewChatMessages(scrollRefKey: string) {
   const chatStore = useChatStore();
   const scrollTemplateRef =
-    useTemplateRef<UIScrollbarTemplateRef>(scrollRefKey);
+    useTemplateRef<typeof chatStore.scrollTemplateRef>(scrollRefKey);
 
   watchEffect(() => {
     chatStore.scrollTemplateRef = scrollTemplateRef.value;

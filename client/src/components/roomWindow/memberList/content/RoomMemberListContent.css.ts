@@ -1,9 +1,12 @@
 import { scrollbarPadding } from "@/components/roomWindow/memberList/RoomMemberList.css";
 import { globalThemeContract } from "@/styles/theme.css";
 import { globalStyle, style } from "@vanilla-extract/css";
-import { recipe } from "@vanilla-extract/recipes";
 
-export const root = style({});
+export const root = style({
+  // text gets messed up during scrolling without this will-change
+  // (in UIDialog)
+  willChange: "opacity",
+});
 
 globalStyle(`${root} [data-reka-scroll-area-viewport]`, {
   // do this in order to show "remove" button focus ring
@@ -51,14 +54,14 @@ export const dt = style({
   gap: "0.75rem",
 });
 
-export const dd = recipe({
-  variants: {
-    visibility: {
-      visible: { marginLeft: "1rem" },
-      hidden: {},
-    },
-  },
-  defaultVariants: { visibility: "hidden" },
+export const dd = style({
+  marginLeft: "1rem",
+});
+
+export const actions = style({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
 });
 
 export const picture = style({

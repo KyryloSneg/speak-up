@@ -3,13 +3,18 @@ import { cn } from "@/utils/shadcn/utils";
 import { reactiveOmit } from "@vueuse/core";
 import type { DialogOverlayProps } from "reka-ui";
 import { DrawerOverlay } from "vaul-vue";
-import type { HTMLAttributes } from "vue";
+import { useTemplateRef, type HTMLAttributes } from "vue";
 
 const props = defineProps<
   DialogOverlayProps & { class?: HTMLAttributes["class"] }
 >();
 
 const delegatedProps = reactiveOmit(props, "class");
+const overlayRef = useTemplateRef("overlay");
+
+defineExpose({
+  $el: overlayRef,
+});
 </script>
 
 <template>
@@ -23,5 +28,6 @@ const delegatedProps = reactiveOmit(props, "class");
         props.class,
       )
     "
+    ref="overlay"
   />
 </template>

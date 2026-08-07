@@ -9,6 +9,7 @@ function useStoreUserAudioTrackCleanup() {
     () => {
       if (!mediaStore.userMediaStream) mediaStore.userAudioTrack = null;
     },
+    { immediate: true },
   );
 }
 
