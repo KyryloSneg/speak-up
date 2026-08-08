@@ -8,6 +8,10 @@
       to: RoutesWithoutParams.HOME,
       variant: 'secondary',
     }"
+    :invisibleFocus="{
+      text: 'Go back to the header',
+      props: { selector: 'header' },
+    }"
     :submitButton="{
       text: 'Create',
       submit,
@@ -19,7 +23,7 @@
     :titleClass="styles.title"
     :actionClass="styles.action"
   >
-    <UIFieldGroup>
+    <UIFieldGroup :id="homeLayoutFieldGroupId">
       <FormField
         name="maxMembers"
         :preserveErrorSpace="true"
@@ -36,6 +40,7 @@ import * as styles from "@/components/layout/home/HomeLayout.css";
 import { UIFieldGroup } from "@/components/ui/shadcn/field";
 import { useRoomStore } from "@/stores/room";
 import { RoutesWithoutParams } from "@/types/routes";
+import { homeLayoutFieldGroupId } from "@/utils/idConsts";
 import { getZodRoomMaxMembersValidation } from "@speak-up/shared";
 import { toTypedSchema } from "@vee-validate/zod";
 import { useForm } from "vee-validate";

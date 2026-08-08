@@ -1,5 +1,16 @@
 <template>
-  <div v-show="isOpenedWindow" :class="styles.windowWrapper">
+  <div
+    v-show="isOpenedWindow"
+    :class="styles.windowWrapper"
+    data-room-window="true"
+  >
+    <UIInvisibleFocus
+      v-if="isOpenedWindow && !!roomStore.openedWindow"
+      selector="footer"
+      class="top-6 left-6"
+    >
+      Go back to the actions
+    </UIInvisibleFocus>
     <UICard
       v-bind="baseCardProps"
       :id="roomChatId"
@@ -24,12 +35,24 @@
     >
       <RoomMemberList />
     </UICard>
+    <UIInvisibleFocus
+      v-if="isOpenedWindow && !!roomStore.openedWindow"
+      :wrapperElemToFocus="
+        roomStore.openedWindow === 'chat' ? roomChatElemRef : memberListElemRef
+      "
+      selector='[data-room-window="true"] [data-reka-scroll-area-viewport]'
+      class="bottom-9 left-1/2 -translate-x-1/2"
+    >
+      Go to the start of the
+      {{ roomStore.openedWindow === "chat" ? "chat" : "member list" }}
+    </UIInvisibleFocus>
   </div>
 </template>
 
 <script setup lang="ts">
 import RoomChat from "@/components/roomWindow/chat/RoomChat.vue";
 import RoomMemberList from "@/components/roomWindow/memberList/RoomMemberList.vue";
+import UIInvisibleFocus from "@/components/ui/custom/invisible-focus/UIInvisibleFocus.vue";
 import { UICard } from "@/components/ui/shadcn/card";
 import type { Props } from "@/components/ui/shadcn/card/UICard.vue";
 import useControllingFocus from "@/composables/useControllingFocus";

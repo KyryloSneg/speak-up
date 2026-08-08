@@ -17,7 +17,7 @@ type RawComponentBindings<TargetComponent> = ExtractProps<TargetComponent> &
 
 export type ComponentBindings<
   TargetComponent,
-  IsRequired extends boolean = true,
+  IsRequired extends boolean = false,
 > = IsRequired extends true
   ? RawComponentBindings<TargetComponent>
   : Partial<RawComponentBindings<TargetComponent>>;

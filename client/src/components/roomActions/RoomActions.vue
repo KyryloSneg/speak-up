@@ -1,4 +1,15 @@
 <template>
+  <UIInvisibleFocus
+    v-if="isOpenedWindow && isOpenedAnyWindow"
+    :selector="
+      roomStore.openedWindow === 'chat'
+        ? `[data-id='${roomChatInputId}']`
+        : `#${memberListId} [data-reka-scroll-area-viewport]`
+    "
+    class="bottom-full"
+  >
+    Skip to the {{ roomStore.openedWindow === "chat" ? "chat" : "member list" }}
+  </UIInvisibleFocus>
   <ul :class="styles.list" :style="assignInlineVars(inlineVars)">
     <li>
       <MicToggle :size="buttonSize" />
@@ -28,15 +39,21 @@
 import ChatToggle from "@/components/roomActions/chat/ChatToggle.vue";
 import LeaveRoom from "@/components/roomActions/leave/LeaveRoom.vue";
 import MemberListToggle from "@/components/roomActions/memberList/MemberListToggle.vue";
+import UIInvisibleFocus from "@/components/ui/custom/invisible-focus/UIInvisibleFocus.vue";
 import CameraToggle from "@/components/userMedia/buttons/cameraToggle/CameraToggle.vue";
 import FlipCamera from "@/components/userMedia/buttons/flipCamera/FlipCamera.vue";
 import MicToggle from "@/components/userMedia/buttons/micToggle/MicToggle.vue";
 import ShareScreen from "@/components/userMedia/buttons/shareScreen/ShareScreen.vue";
 import useCanFlipCamera from "@/composables/useCanFlipCamera";
+import useIsRoomOpenedWindow from "@/composables/useIsRoomOpenedWindow";
+import { useRoomStore } from "@/stores/room";
+import { memberListId, roomChatInputId } from "@/utils/idConsts";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import { useMediaQuery } from "@vueuse/core";
 import { computed } from "vue";
 import * as styles from "./RoomActions.css";
+
+const roomStore = useRoomStore();
 
 const canFlipCamera = useCanFlipCamera();
 const inlineVars = computed(() => ({
@@ -50,4 +67,7 @@ const isDesktop = useMediaQuery(
 );
 
 const buttonSize = computed(() => (isDesktop.value ? "icon-xl" : "icon-lg"));
+
+const isOpenedWindow = useIsRoomOpenedWindow();
+const isOpenedAnyWindow = computed(() => !!roomStore.openedWindow);
 </script>

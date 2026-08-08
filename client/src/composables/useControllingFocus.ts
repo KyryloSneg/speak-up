@@ -21,6 +21,7 @@ function useControllingFocus(
             currentTabindex !== null ? currentTabindex : "none",
           );
         }
+
         elem.setAttribute("tabindex", "-1");
       } else {
         const orig = elem.getAttribute("data-orig-tabindex");

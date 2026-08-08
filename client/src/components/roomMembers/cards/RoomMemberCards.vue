@@ -9,6 +9,13 @@
         ref="pinnedSection"
       >
         <h3 class="sr-only">Pinned</h3>
+        <UIInvisibleFocus
+          v-if="hasUnpinned"
+          :wrapperElemToFocus="unpinnedRef"
+          class="top-4"
+        >
+          Skip to the unpinned members
+        </UIInvisibleFocus>
         <RoomMemberCardsList
           :layout="pinnedLayout"
           :isInstantTransition="isSingleItem"
@@ -27,6 +34,9 @@
         ref="unpinnedSection"
       >
         <h3 class="sr-only">Unpinned</h3>
+        <UIInvisibleFocus v-if="hasPinned" :wrapperElemToFocus="pinnedRef">
+          Go back to the pinned members
+        </UIInvisibleFocus>
         <RoomMemberCardsList
           :layout="unpinnedLayout"
           :isInstantTransition="isSingleItem"
@@ -44,6 +54,7 @@
 import RoomOtherMembers from "@/components/roomMembers/cards/card/otherMembers/RoomOtherMembers.vue";
 import RoomOtherPinnedCards from "@/components/roomMembers/cards/card/otherPinnedCards/RoomOtherPinnedCards.vue";
 import RoomMemberCardsList from "@/components/roomMembers/cards/list/RoomMemberCardsList.vue";
+import UIInvisibleFocus from "@/components/ui/custom/invisible-focus/UIInvisibleFocus.vue";
 import useMemberCardsLayout from "@/composables/useMemberCardsLayout";
 import { useRoomStore } from "@/stores/room";
 import { assignInlineVars } from "@vanilla-extract/dynamic";

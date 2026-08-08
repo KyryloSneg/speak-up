@@ -98,7 +98,7 @@ export const useRoomStore = defineStore("room", () => {
           room.value = {
             id: data.id,
             hostId: authStore.user!.id,
-            users: generateUsers([authStore.user!], 0),
+            users: generateUsers([authStore.user!], 10),
             messages: [],
             maxMembers: maxMembersOfFutureRoom.value,
           };

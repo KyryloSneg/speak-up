@@ -1,6 +1,9 @@
 <template>
   <header :class="styles.header">
     <h1 class="sr-only">{{ APP_NAME }}</h1>
+    <UIInvisibleFocus selector="main">
+      Skip to the main content
+    </UIInvisibleFocus>
     <RoomIdSpoiler />
     <AppHeaderActions />
   </header>
@@ -11,10 +14,26 @@
     "
     @scroll="scroll"
   >
+    <UIInvisibleFocus selector="header" class="top-4 left-4">
+      Go back to the header
+    </UIInvisibleFocus>
+    <UIInvisibleFocus
+      selector="footer"
+      :isAutoFocusable="true"
+      class="top-4 left-4"
+    >
+      Skip to the actions
+    </UIInvisibleFocus>
     <RoomMemberCards />
     <RoomWindow />
   </main>
   <footer :class="styles.footer">
+    <UIInvisibleFocus
+      selector='main *:not([data-invisible-focus="true"])'
+      class="bottom-full"
+    >
+      Go back to the main content
+    </UIInvisibleFocus>
     <RoomActions />
   </footer>
   <MemberAnnouncer />
@@ -22,8 +41,6 @@
 </template>
 
 <script setup lang="ts">
-// TODO: create focus skips (through whole app) + hotkeys when the main logic will be done
-// (do it as a separate commit)
 import MemberAnnouncer from "@/components/announcers/member/MemberAnnouncer.vue";
 import SharingScreenAnnouncer from "@/components/announcers/sharingScreen/SharingScreenAnnouncer.vue";
 import AppHeaderActions from "@/components/appHeader/actions/AppHeaderActions.vue";
@@ -31,6 +48,7 @@ import RoomActions from "@/components/roomActions/RoomActions.vue";
 import RoomIdSpoiler from "@/components/roomIdSpoiler/RoomIdSpoiler.vue";
 import RoomMemberCards from "@/components/roomMembers/cards/RoomMemberCards.vue";
 import RoomWindow from "@/components/roomWindow/RoomWindow.vue";
+import UIInvisibleFocus from "@/components/ui/custom/invisible-focus/UIInvisibleFocus.vue";
 import useIsRoomOpenedWindow from "@/composables/useIsRoomOpenedWindow";
 import { useRoomStore } from "@/stores/room";
 import { APP_NAME } from "@speak-up/shared";
