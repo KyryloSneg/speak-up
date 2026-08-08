@@ -1,7 +1,7 @@
 <template>
   <ul :class="styles.list">
     <li>
-      <SettingsModal v-if="isToShowSettings" />
+      <SettingsModal v-if="isToShowSettings" :isHotkey="true" />
     </li>
     <li
       :class="

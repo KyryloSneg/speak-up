@@ -1,17 +1,16 @@
-import { style } from "@vanilla-extract/css";
+import { globalStyle, style } from "@vanilla-extract/css";
 
 export const content = style({
+  alignSelf: "start",
   display: "grid",
   gridTemplateRows: "auto 1fr",
   width: "100%",
   height: "max-content",
   maxWidth: "min(45rem, calc(100vw - 2rem))",
-  minHeight: "19rem",
 
   selectors: {
     "[data-slot='drawer-content'] &": {
       maxWidth: "none",
-      minHeight: "27rem",
     },
   },
 });
@@ -26,4 +25,8 @@ export const title = style({
       textAlign: "center",
     },
   },
+});
+
+globalStyle(`[data-slot='drawer-content']:has(.${content})`, {
+  height: "100vh",
 });

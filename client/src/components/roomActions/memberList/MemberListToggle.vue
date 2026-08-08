@@ -5,6 +5,7 @@
       :value="slotProps.value"
       :size
       :data-id="slotProps.dataId"
+      aria-keyshortcuts="Control+Alt+P Control+Meta+P"
       :id="memberListToggleId"
       @click="slotProps.click"
     >
@@ -18,14 +19,25 @@
 import BaseAsideToggle from "@/components/roomActions/base/BaseAsideToggle.vue";
 import RoomMemberListTrigger from "@/components/roomMemberListTrigger/RoomMemberListTrigger.vue";
 import type { ButtonVariants } from "@/components/ui/shadcn/button";
-import useIsRoomOpenedWindow from "@/composables/useIsRoomOpenedWindow";
 import getAriaAttributesFromProps from "@/utils/getAriaAttributesFromProps";
 import { memberListToggleId } from "@/utils/idConsts";
 import { PanelRightClose, Users } from "@lucide/vue";
+import { useEventListener } from "@vueuse/core";
+import { onMounted } from "vue";
 
 defineProps<{
   size: ButtonVariants["size"];
 }>();
 
-const isOpenedWindow = useIsRoomOpenedWindow();
+onMounted(() => {
+  useEventListener(document, "keydown", (e: KeyboardEvent) => {
+    if (!e.altKey && !e.metaKey) return;
+    if (!e.ctrlKey || e.code !== "KeyP") return;
+
+    e.preventDefault();
+
+    const button = document.getElementById(memberListToggleId);
+    button?.click();
+  });
+});
 </script>

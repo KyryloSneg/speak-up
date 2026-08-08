@@ -34,6 +34,7 @@
         aria-label="Copy room id"
         size="icon"
         variant="outline"
+        aria-keyshortcuts="Control+Y"
         :class="styles.copyButton({ state: isCopied ? 'copied' : 'idle' })"
         @click="copy"
       >
@@ -53,8 +54,8 @@ import copyToClipboard from "@/services/copyToClipboard";
 import { useRoomStore } from "@/stores/room";
 import { cn } from "@/utils/shadcn/utils";
 import { Copy, CopyCheck } from "@lucide/vue";
-import { useDebounceFn } from "@vueuse/core";
-import { ref, useId } from "vue";
+import { useDebounceFn, useEventListener } from "@vueuse/core";
+import { onMounted, ref, useId } from "vue";
 import { toast } from "vue-sonner";
 import * as styles from "./RoomIdSpoiler.css";
 
@@ -92,4 +93,13 @@ async function copy(): Promise<void> {
     onError: e => toast.error(e.message),
   });
 }
+
+onMounted(() => {
+  useEventListener(document, "keydown", (e: KeyboardEvent) => {
+    if (!e.ctrlKey || e.code !== "KeyY") return;
+
+    e.preventDefault();
+    copy();
+  });
+});
 </script>

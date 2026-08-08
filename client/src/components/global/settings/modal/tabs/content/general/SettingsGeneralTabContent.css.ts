@@ -1,16 +1,19 @@
-import { globalStyle, style } from "@vanilla-extract/css";
+import { style } from "@vanilla-extract/css";
 
-export const formCard = style({
-  background: "none",
-  border: "none",
-  boxShadow: "none",
-  maxWidth: "23rem",
-  padding: 0,
+export const rootSection = style({
+  display: "flex",
+  flexDirection: "column",
+  gap: "2rem",
 });
 
-globalStyle(
-  `${formCard} [data-slot="card-content"], ${formCard} [data-slot="card-footer"]`,
-  {
-    padding: 0,
-  },
-);
+// children styles
+export const section = style({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: "1.25rem",
+});
+
+export const heading = style({
+  fontSize: "1.25rem",
+});

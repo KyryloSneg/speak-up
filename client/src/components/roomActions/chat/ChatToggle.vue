@@ -6,6 +6,7 @@
     :aria-label="ariaLabel"
     :aria-controls="roomChatId"
     :aria-expanded="value"
+    aria-keyshortcuts="Control+Alt+C Control+Meta+C"
     :id="roomChatToggleId"
     @click="toggle"
   >
@@ -18,6 +19,7 @@
         :value
         :size
         :aria-label="ariaLabel"
+        aria-keyshortcuts="Control+Alt+C Control+Meta+C"
         :id="roomChatToggleId"
       >
         <MessageCircleMore />
@@ -51,7 +53,8 @@ import {
   roomChatToggleId,
 } from "@/utils/idConsts";
 import { MessageCircleMore, MessageCircleOff } from "@lucide/vue";
-import { computed, nextTick } from "vue";
+import { useEventListener } from "@vueuse/core";
+import { computed, nextTick, onMounted } from "vue";
 
 defineProps<{
   size: ButtonVariants["size"];
@@ -80,4 +83,14 @@ const ariaLabel = computed(() =>
 );
 
 const isOpenedWindow = useIsRoomOpenedWindow();
+
+onMounted(() => {
+  useEventListener(document, "keydown", (e: KeyboardEvent) => {
+    if (!e.altKey && !e.metaKey) return;
+    if (!e.ctrlKey || e.code !== "KeyC") return;
+
+    e.preventDefault();
+    toggle();
+  });
+});
 </script>
