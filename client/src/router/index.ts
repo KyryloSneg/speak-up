@@ -75,7 +75,7 @@ router.beforeEach(async (to, from) => {
   }
 
   if (to.meta.accessType === RouteMetaAccessTypes.AUTH && !authStore.isAuth) {
-    const nextRoute = handleLogout(false);
+    const nextRoute = await handleLogout(false);
     return nextRoute;
   }
 

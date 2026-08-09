@@ -147,7 +147,7 @@ authApiInstance.interceptors.response.use(
       !originalRequest._retry
     ) {
       if (originalRequest.url?.includes(ApiRoutes.REFRESH)) {
-        handleLogout();
+        await handleLogout();
         return Promise.reject(error);
       }
 
@@ -174,7 +174,7 @@ authApiInstance.interceptors.response.use(
         isRefreshing = false;
 
         processQueue(refreshResponse.originalError, null);
-        handleLogout();
+        await handleLogout();
 
         return Promise.reject(refreshResponse.originalError);
       }

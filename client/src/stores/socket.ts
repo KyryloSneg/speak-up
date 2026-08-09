@@ -21,7 +21,7 @@ export const useSocketStore = defineStore("socket", () => {
 
         if (authError.data?.code === SocketAuthConnectionErrorCode) {
           const refreshResponse = await $api.auth.refresh();
-          if (!refreshResponse.data) return handleLogout();
+          if (!refreshResponse.data) return await handleLogout();
 
           const {
             tokens: { accessToken },
