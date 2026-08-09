@@ -24,7 +24,9 @@ export const DEFAULT_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 
 export const DEFAULT_SCREEN_SHARING_CONSTRAINTS: DisplayMediaStreamOptions = {
   video: {
-    frameRate: { ideal: 15, max: 30 },
+    frameRate: { ideal: 40, max: 60 },
+    width: { ideal: 1280, max: 1920 },
+    height: { ideal: 720, max: 1080 },
   },
   audio: {
     echoCancellation: false,
@@ -35,12 +37,12 @@ export const DEFAULT_SCREEN_SHARING_CONSTRAINTS: DisplayMediaStreamOptions = {
   selfBrowserSurface: "exclude",
   surfaceSwitching: "include",
   systemAudio: "include",
-  suppressLocalAudioPlayback: "supress",
+  suppressLocalAudioPlayback: true,
 };
 
 export const PREFERRED_VIDEO_CODECS: VideoCodecMimeType[] = [
-  "video/VP9",
-  "video/H264",
   "video/AV1",
+  "video/H264",
+  "video/VP9",
   "video/VP8",
 ] as const;

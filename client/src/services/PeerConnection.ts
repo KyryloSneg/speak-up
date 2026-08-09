@@ -6,6 +6,7 @@ import {
 import { PREFERRED_VIDEO_CODECS } from "@/utils/mediaConsts";
 import optimizeAudioSdp from "@/utils/optimizeAudioSdp";
 import sortByMIMETypes from "@/utils/sortByMIMETypes";
+import startOptimizingScreenSharingVideo from "@/utils/startOptimizingScreenSharingVideo";
 import { WEBRTC_CONFIG } from "@/utils/webrtcConsts";
 
 export type PeerConnectionOnError = (info: {
@@ -181,13 +182,15 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
       const [audioTrack] = stream.getAudioTracks();
 
       if (videoTrack) {
-        videoTrack.contentHint = "detail";
-
         if (this.screenSharingVideoSender) {
           this.pc.removeTrack(this.screenSharingVideoSender);
         }
 
         this.screenSharingVideoSender = this.pc.addTrack(videoTrack, stream);
+        startOptimizingScreenSharingVideo(
+          videoTrack,
+          this.screenSharingVideoSender,
+        );
       }
 
       if (audioTrack) {
@@ -267,7 +270,8 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
               const params = sender.getParameters();
               if (params.encodings && params.encodings.length > 0) {
                 params.encodings.forEach(encoding => {
-                  encoding.maxBitrate = 500000;
+                  // if smth has overwritten this value, let it be as is
+                  if (!encoding.maxBitrate) encoding.maxBitrate = 500000;
                 });
 
                 sender.setParameters(params).catch(() => {});
@@ -287,8 +291,8 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
           !!this.remoteScreenSharingStreamId &&
           stream.id === this.remoteScreenSharingStreamId;
 
-        if (videoTrack) {
-          videoTrack.contentHint = isScreenShare ? "detail" : "motion";
+        if (videoTrack && !isScreenShare) {
+          videoTrack.contentHint = "motion";
         }
 
         if (audioTrack) {

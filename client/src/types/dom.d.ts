@@ -6,7 +6,7 @@ declare global {
     surfaceSwitching?: "include" | "exclude";
     systemAudio?: "include" | "exclude";
     monitorTypeSurfaces?: "include" | "exclude";
-    suppressLocalAudioPlayback?: "include" | "exclude" | "supress";
+    suppressLocalAudioPlayback?: "include" | "exclude" | boolean;
     preferCurrentTab?: boolean;
   }
 

@@ -61,9 +61,9 @@ function useRemoteScreenSharingsAutoCleanup() {
 
               // mostly, we get here
 
-              // if the stream is inactive even after 1.75 seconds, consider it as a
+              // if the stream is inactive even after 2.5 seconds, consider it as a
               // stopped one
-              const timeoutId = setTimeout(cleanup, 1750);
+              const timeoutId = setTimeout(cleanup, 2500);
               onCleanup(() => clearTimeout(timeoutId));
             });
           });

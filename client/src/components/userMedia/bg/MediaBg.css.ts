@@ -50,6 +50,7 @@ export const bg = recipe({
     width: "100%",
     height: "100%",
     borderRadius,
+    imageRendering: "-webkit-optimize-contrast",
   },
   variants: {
     origin: {

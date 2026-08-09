@@ -2,7 +2,7 @@ import { ref, toValue, watchEffect, type MaybeRefOrGetter } from "vue";
 
 export function useAudioNoiseGate(
   streamRef: MaybeRefOrGetter<MediaStream | null>,
-  thresholdRef: MaybeRefOrGetter<number> = 1.2,
+  thresholdRef: MaybeRefOrGetter<number> = 1.15,
   holdTimeMsRef: MaybeRefOrGetter<number> = 400,
   floorRef: MaybeRefOrGetter<number> = 0.05,
 ) {
