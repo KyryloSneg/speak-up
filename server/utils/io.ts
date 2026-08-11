@@ -1,3 +1,4 @@
+import rejoiningUsersCleanupLoop from "#cleanup/rejoiningUsersCleanupLoop.ts";
 import roomsCleanupLoop from "#cleanup/roomsCleanupLoop.ts";
 import type { IO } from "#types/socket.ts";
 import initSocket from "#utils/initSocket.ts";
@@ -55,7 +56,10 @@ function createIO(server?: HTTPServer): IO | undefined {
   ).on(SocketEvents.CONNECTION, socket => initSocket(socket, io));
 
   if (process.env.NODE_ENV !== "test") {
-    io.once(SocketEvents.CONNECTION, () => roomsCleanupLoop(io));
+    io.once(SocketEvents.CONNECTION, () => {
+      roomsCleanupLoop(io);
+      rejoiningUsersCleanupLoop(io);
+    });
   }
 
   singletonIo = io;

@@ -21,11 +21,13 @@ async function handleLogout(
   const roomStore = useRoomStore();
 
   if (roomStore.room) roomStore.isToSupressLeaveConfirm = true;
-  socket.disconnect();
 
   localStorage.removeItem(LocalStorageKeys.ACCESS_TOKEN);
-
   await $api.auth.logout();
+
+  if (roomStore.room) roomStore.isToSupressLeaveConfirm = true;
+  socket.disconnect();
+
   authStore.user = null;
 
   const nextRoute = RoutesWithoutParams.SIGN_IN;
