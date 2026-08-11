@@ -226,6 +226,7 @@ watchEffect(() => {
   if (
     props.type === "screenSharing" ||
     props.isFullScreen ||
+    isLocal.value || // optimisation
     volume.value < 10 ||
     !user.value
   ) {

@@ -1,9 +1,8 @@
 import { globalThemeContract } from "@/styles/theme.css";
 import { globalStyle, style } from "@vanilla-extract/css";
-import { nanoid } from "nanoid";
 
-export const transitionName = `fade-${nanoid()}`;
-export const alertTransitionName = `alert-fade-${nanoid()}`;
+export const transitionName = "fade";
+export const alertTransitionName = "alert-fade";
 
 export const distanceToTheSides = "1rem";
 export const button = style({

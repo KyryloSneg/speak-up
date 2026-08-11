@@ -14,10 +14,9 @@ import {
   style,
 } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
-import { nanoid } from "nanoid";
 
-export const screenSharingTransitionName = `fade-${nanoid()}`;
-export const overlayTransitionName = `fade-${nanoid()}`;
+export const screenSharingTransitionName = "fade-screen-sharing";
+export const overlayTransitionName = "fade-overlay";
 
 export const colorBgColor = createVar();
 export const pictureContrastColor = createVar();
@@ -32,7 +31,7 @@ const baseRegularShadowColor = createVar();
 const regularShadowColor = createVar();
 
 const regularShadowValue = getRegularShadow(regularShadowColor);
-const containerName = `card-${nanoid()}`;
+const containerName = "room-member-card";
 
 const sectionOutline =
   "focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background focus-within:ring-3 focus-within:ring-ring focus-within:ring-offset-4 focus-within:ring-offset-background";

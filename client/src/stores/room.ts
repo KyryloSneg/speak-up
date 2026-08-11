@@ -14,10 +14,8 @@ import {
   SocketEvents,
   SocketResponseEvents,
   type SocketMediaConfig,
-  type UserDto,
 } from "@speak-up/shared";
 import _ from "lodash";
-import { nanoid } from "nanoid";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { toast } from "vue-sonner";
@@ -80,25 +78,10 @@ export const useRoomStore = defineStore("room", () => {
         } else {
           const mediaStore = useMediaStore();
 
-          function generateUsers(
-            users: UserDto[],
-            repeatTimes: number = 0,
-          ): UserDto[] {
-            return users.concat(
-              Array.from({ length: repeatTimes }).reduce(
-                (acc: UserDto[]) =>
-                  acc
-                    .concat(users.map(user => ({ ...user, id: nanoid() })))
-                    .flat(),
-                [],
-              ),
-            );
-          }
-
           room.value = {
             id: data.id,
             hostId: authStore.user!.id,
-            users: generateUsers([authStore.user!], 10),
+            users: [authStore.user!],
             messages: [],
             maxMembers: maxMembersOfFutureRoom.value,
           };
@@ -274,6 +257,7 @@ export const useRoomStore = defineStore("room", () => {
 
     return [...users].sort((a, b) => {
       if (a.id === authStore.user?.id) return -1;
+      if (b.id === authStore.user?.id) return 1;
 
       if (!a.lastSpeakedAt && !b.lastSpeakedAt) return 0;
       if (!a.lastSpeakedAt) return 1;

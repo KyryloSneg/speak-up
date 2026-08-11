@@ -134,66 +134,103 @@ export const useMediaStore = defineStore("media", () => {
       if (errorsAmount === maxErrorsAmount) hasStartedMedia.value = false;
     };
 
-    const mediaSettingsStore = useMediaSettingsStore();
-    const { microphone: selectedMic, camera: selectedCamera } =
-      mediaSettingsStore.selectedDevices;
+    const startMediaTrack = (type: "audio" | "video"): void => {
+      const onErrorWithPossibleFallback: StartUserMediaOnError = info => {
+        const mediaSettingsStore = useMediaSettingsStore();
+        const selectedDevice =
+          mediaSettingsStore.selectedDevices[
+            type === "audio" ? "microphone" : "camera"
+          ];
 
-    // always provide fake "default" instead of the actual default camera id
-    // (replacing "default" with the actual default camera id is unwanted in the
-    // future, so we do this hack)
-    // ("default" is relevant only for the mic, not for the camera)
-    const selectedCameraToUse =
-      selectedCamera === mediaSettingsStore.defaultCamera
-        ? "default"
-        : selectedCamera;
+        const defaultDevice =
+          type === "audio" ? "default" : mediaSettingsStore.defaultCamera;
+
+        if (
+          info.error?.name === "OverconstrainedError" &&
+          selectedDevice !== defaultDevice
+        ) {
+          // this error can happen if user uses a device in one session that is
+          // absent in the next one, so explicit .deviceId (with "exact" option)
+          // is set. we can't always use "ideal" instead because the UI won't be
+          // synced with the device actually used
+          if (type === "audio") {
+            mediaSettingsStore.selectedMicrophone = defaultDevice;
+          } else {
+            mediaSettingsStore.selectedCamera = defaultDevice;
+          }
+
+          // if this error occurs again, go straight to the base onError
+          startTrack(onError);
+        } else {
+          // "critical" error
+          onError(info);
+        }
+      };
+
+      function calcConstraints() {
+        const mediaSettingsStore = useMediaSettingsStore();
+        const { microphone: selectedMic, camera: selectedCamera } =
+          mediaSettingsStore.selectedDevices;
+
+        // always provide fake "default" instead of the actual default camera id
+        // (replacing "default" with the actual default camera id is unwanted in the
+        // future, so we do this hack)
+        // ("default" is relevant only for the mic, not for the camera)
+        const selectedCameraToUse =
+          selectedCamera === mediaSettingsStore.defaultCamera
+            ? "default"
+            : selectedCamera;
+
+        const audioConstraints: MediaTrackConstraints = {
+          deviceId: {
+            [selectedMic === "default" ? "ideal" : "exact"]: selectedMic,
+          },
+        } as const;
+
+        const videoConstraints: MediaTrackConstraints = {
+          deviceId: {
+            [selectedCameraToUse === "default" ? "ideal" : "exact"]:
+              selectedCameraToUse,
+          },
+          facingMode: isCameraFlipped.value
+            ? FacingModes.ENVIRONMENT
+            : FacingModes.USER,
+        } as const;
+
+        return { audioConstraints, videoConstraints };
+      }
+
+      function startTrack(onError: StartUserMediaOnError): void {
+        const { audioConstraints, videoConstraints } = calcConstraints();
+        mediaDevice.startUserMedia(
+          {
+            audio: type === "audio" ? config.value.audio : false,
+            video: type === "video" ? config.value.video : false,
+          },
+          {
+            audioConstraints: type === "audio" ? audioConstraints : undefined,
+            videoConstraints: type === "video" ? videoConstraints : undefined,
+            onError,
+          },
+        );
+      }
+
+      startTrack(onErrorWithPossibleFallback);
+    };
 
     mediaDevice
       .off(MediaDeviceEvents.USER_MEDIA_STREAM)
       .on(MediaDeviceEvents.USER_MEDIA_STREAM, stream => {
         const typedStream = stream as MediaDevice["userMediaStream"];
         rawUserMediaStream.value = typedStream;
-
-        userVideoTrack.value =
-          rawUserMediaStream.value?.getVideoTracks()[0] || null;
       });
-
-    const audioConstraints: MediaTrackConstraints = {
-      deviceId: {
-        [selectedMic === "default" ? "ideal" : "exact"]: selectedMic,
-      },
-    } as const;
-
-    const videoConstraints: MediaTrackConstraints = {
-      deviceId: {
-        [selectedCameraToUse === "default" ? "ideal" : "exact"]:
-          selectedCameraToUse,
-      },
-      facingMode: isCameraFlipped.value
-        ? FacingModes.ENVIRONMENT
-        : FacingModes.USER,
-    } as const;
 
     // start audio and video as separate tracks. this helps in situations when a
     // specific track (A) fails and the second one (B) isn't, so track A error
     // doesn't disrupt track B
 
-    // audio
-    mediaDevice.startUserMedia(
-      { audio: config.value.audio, video: false },
-      {
-        audioConstraints,
-        onError,
-      },
-    );
-
-    // video
-    mediaDevice.startUserMedia(
-      { audio: false, video: config.value.video },
-      {
-        videoConstraints,
-        onError,
-      },
-    );
+    startMediaTrack("audio");
+    startMediaTrack("video");
   }
 
   function startScreenSharing(): void {

@@ -16,6 +16,16 @@ export function useAudioNoiseGate(
       return;
     }
 
+    function addTrack(track: MediaStreamTrack): void {
+      outputStream.addTrack(track);
+      outputStream.dispatchEvent(new CustomEvent("customaddtrack"));
+    }
+
+    function removeTrack(track: MediaStreamTrack): void {
+      outputStream.removeTrack(track);
+      outputStream.dispatchEvent(new CustomEvent("customremovetrack"));
+    }
+
     const outputStream = new MediaStream();
     processedStream.value = outputStream;
 
@@ -55,9 +65,7 @@ export function useAudioNoiseGate(
       }
 
       if (destination) {
-        destination.stream.getAudioTracks().forEach(track => {
-          outputStream.removeTrack(track);
-        });
+        destination.stream.getAudioTracks().forEach(removeTrack);
         destination.disconnect();
         destination = null;
       }
@@ -134,7 +142,7 @@ export function useAudioNoiseGate(
       }, 20);
 
       const gatedTrack = destination.stream.getAudioTracks()[0];
-      if (gatedTrack) outputStream.addTrack(gatedTrack);
+      if (gatedTrack) addTrack(gatedTrack);
     };
 
     const updateTracks = () => {
@@ -152,12 +160,12 @@ export function useAudioNoiseGate(
 
       videoTracks.forEach(track => {
         if (!currentOutputVideoTracks.includes(track)) {
-          outputStream.addTrack(track);
+          addTrack(track);
         }
       });
 
       currentOutputVideoTracks.forEach(track => {
-        if (!videoTracks.includes(track)) outputStream.removeTrack(track);
+        if (!videoTracks.includes(track)) removeTrack(track);
       });
     };
 

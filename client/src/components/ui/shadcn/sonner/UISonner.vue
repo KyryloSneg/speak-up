@@ -24,11 +24,8 @@ const props = defineProps<ToasterProps>();
         ...props.toastOptions,
         classes: {
           toast:
-            'group toast flex items-center gap-3 w-full font-sans p-4 min-w-[340px] !rounded-xl !border ' +
-            '!bg-white !text-neutral-900 !border-neutral-200/80 !shadow-[0_15px_45px_rgba(0,0,0,0.14)] ' +
-            'dark:!bg-neutral-900 dark:!text-neutral-50 dark:!border-white/[0.08] dark:!shadow-[0_22px_60px_rgba(0,0,0,0.7)]',
-
-          description: 'text-neutral-500 dark:text-neutral-400 text-xs',
+            'group toast flex items-center gap-3 w-full font-sans p-4 min-w-[340px] !rounded-xl !border !border-border !bg-popover !text-popover-foreground !shadow-lg',
+          description: '!text-muted-foreground text-xs',
           actionButton:
             'bg-primary text-primary-foreground text-xs font-medium px-3 py-1.5 rounded-md transition-colors hover:bg-primary/90',
           cancelButton:

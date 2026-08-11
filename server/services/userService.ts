@@ -125,7 +125,7 @@ class UserService {
   static async logout(refreshToken: string | undefined): Promise<Token | null> {
     if (!refreshToken) return null;
 
-    const token = await prisma.token.findUnique({ where: { refreshToken } });
+    const token = await prisma.token.delete({ where: { refreshToken } });
     return token;
   }
 

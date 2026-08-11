@@ -13,7 +13,7 @@ const props = defineProps<
   <SelectLabel
     :class="
       cn(
-        'py-1.5 pl-9 pr-2 text-xs font-semibold tracking-wide text-neutral-400 dark:text-neutral-500',
+        'py-1.5 pl-9 pr-2 text-xs font-semibold tracking-wide text-muted-foreground',
         props.class,
       )
     "

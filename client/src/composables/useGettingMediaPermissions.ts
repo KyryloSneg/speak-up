@@ -15,6 +15,7 @@ function useGettingMediaPermissions() {
   const requestPermissions = async () => {
     try {
       await start();
+    } catch {
     } finally {
       stop();
     }

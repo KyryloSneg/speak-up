@@ -40,9 +40,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       :class="
         cn(
           'z-50 w-fit origin-(--reka-tooltip-content-transform-origin) rounded-lg bg-popover px-3 py-1.5 text-sm font-medium text-popover-foreground shadow-md text-balance outline-none select-none',
-          'animate-in fade-in-0 zoom-in-95',
-          'data-[side=bottom]:slide-in-from-top-1.5 data-[side=left]:slide-in-from-right-1.5 data-[side=right]:slide-in-from-left-1.5 data-[side=top]:slide-in-from-bottom-1.5',
-          'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
+          'animate-in fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+          'motion-safe:zoom-in-95 motion-safe:data-[state=closed]:zoom-out-95',
+          'motion-safe:data-[side=bottom]:slide-in-from-top-1.5 motion-safe:data-[side=left]:slide-in-from-right-1.5 motion-safe:data-[side=right]:slide-in-from-left-1.5 motion-safe:data-[side=top]:slide-in-from-bottom-1.5',
           props.class,
         )
       "

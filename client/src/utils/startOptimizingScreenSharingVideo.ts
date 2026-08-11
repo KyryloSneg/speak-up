@@ -26,6 +26,8 @@ function startOptimizingScreenSharingVideo(
     lowMotionThreshold = 0.06,
   } = options;
 
+  if (!window.OffscreenCanvas) return () => {};
+
   const cleanup = () => {
     const trackInfo = optimizedTracks.get(track.id);
 

@@ -1,8 +1,7 @@
 import { roomViewOverflowClass } from "@/views/RoomView.css";
 import { createVar, style } from "@vanilla-extract/css";
-import { nanoid } from "nanoid";
 
-const wrapperContainerName = `wrapper-${nanoid()}`;
+const wrapperContainerName = "room-member-cards-wrapper";
 
 export const wrapper = style([
   roomViewOverflowClass,

@@ -33,12 +33,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       v-bind="forwarded"
       :class="
         cn(
-          'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ' +
-            'max-w-[var(--reka-select-content-available-width)] ' +
-            'border-neutral-200/80 bg-white text-neutral-900 shadow-[0_15px_45px_rgba(0,0,0,0.14)] ' +
-            'dark:border-white/[0.08] dark:bg-neutral-900 dark:text-neutral-50 dark:shadow-[0_22px_60px_rgba(0,0,0,0.7)]',
+          'relative z-50 max-h-96 min-w-32 max-w-(--reka-select-content-available-width) overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-md outline-none',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+          'motion-safe:data-[state=closed]:zoom-out-95 motion-safe:data-[state=open]:zoom-in-95',
+          'motion-safe:data-[side=bottom]:slide-in-from-top-2 motion-safe:data-[side=left]:slide-in-from-right-2 motion-safe:data-[side=right]:slide-in-from-left-2 motion-safe:data-[side=top]:slide-in-from-bottom-2',
           position === 'popper' &&
-            'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
+            'motion-safe:data-[side=bottom]:translate-y-1 motion-safe:data-[side=left]:-translate-x-1 motion-safe:data-[side=right]:translate-x-1 motion-safe:data-[side=top]:-translate-y-1',
           props.class,
         )
       "
@@ -49,7 +49,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
           cn(
             'p-1.5',
             position === 'popper' &&
-              'h-[var(--reka-select-trigger-height)] w-full min-w-[var(--reka-select-trigger-width)]',
+              'h-(--reka-select-trigger-height) w-full min-w-(--reka-select-trigger-width)',
           )
         "
       >

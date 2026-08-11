@@ -1,6 +1,7 @@
 import $api from "@/http";
 import router from "@/router";
 import { useAuthStore } from "@/stores/auth";
+import { useRoomStore } from "@/stores/room";
 import { LocalStorageKeys } from "@/types/localStorage";
 import { RoutesWithoutParams } from "@/types/routes";
 import socket from "@/utils/socket";
@@ -17,12 +18,15 @@ async function handleLogout(
   isToRedirect: boolean = true,
 ): Promise<void | RoutesWithoutParamsValues> {
   const authStore = useAuthStore();
-  authStore.user = null;
+  const roomStore = useRoomStore();
 
+  if (roomStore.room) roomStore.isToSupressLeaveConfirm = true;
   socket.disconnect();
+
   localStorage.removeItem(LocalStorageKeys.ACCESS_TOKEN);
 
   await $api.auth.logout();
+  authStore.user = null;
 
   const nextRoute = RoutesWithoutParams.SIGN_IN;
   if (isToRedirect) {

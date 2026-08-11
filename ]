@@ -6,8 +6,9 @@ import {
   style,
   type StyleRule,
 } from "@vanilla-extract/css";
+import { nanoid } from "nanoid";
 
-export const transitionGroupName = "cards";
+export const transitionGroupName = `cards-${nanoid()}`;
 export const defaultTransitionDuration = "350ms";
 
 const transitionDuration = createVar();
@@ -78,7 +79,7 @@ globalStyle(`.${transitionGroupName}-move`, {
 
 globalStyle(`.${transitionGroupName}-enter-active`, {
   transition: formatCommaSeparatedCss(`
-    opacity ${opacityTransitionConfig},
+    opacity ${opacityTransitionDuration},
     all ${transitionConfig}
   `),
 });
@@ -94,7 +95,7 @@ globalStyle(`.${transitionGroupName}-leave-active`, {
   zIndex: 0,
   overflow: "hidden",
   transition: formatCommaSeparatedCss(`
-    opacity ${opacityTransitionConfig},
+    opacity ${opacityTransitionDuration},
     transform ${transitionConfig}
   `),
 });

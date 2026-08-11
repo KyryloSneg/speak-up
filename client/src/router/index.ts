@@ -69,10 +69,9 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const authStore = useAuthStore();
-  if (!authStore.isInitialized) {
-    await authStore.initAuth();
-    if (authStore.isAuth) postAuthCb();
-  }
+
+  if (!authStore.isInitialized) await authStore.initAuth();
+  if (authStore.isAuth) postAuthCb();
 
   if (to.meta.accessType === RouteMetaAccessTypes.AUTH && !authStore.isAuth) {
     const nextRoute = await handleLogout(false);
