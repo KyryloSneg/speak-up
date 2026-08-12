@@ -7,7 +7,17 @@ function getRGBFromCssRGB(cssRGB: string): RGB {
     .replaceAll(")", "");
 
   const [r, g, b] = commaSeparatedRGB.split(", ").map(Number);
-  if (!r || !g || !b) throw new Error("Invalid cssRGB");
+
+  if (
+    r === undefined ||
+    isNaN(r) ||
+    g === undefined ||
+    isNaN(g) ||
+    b === undefined ||
+    isNaN(b)
+  ) {
+    throw new Error("Invalid css RGB");
+  }
 
   return [r, g, b];
 }

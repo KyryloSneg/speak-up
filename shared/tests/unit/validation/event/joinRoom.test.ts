@@ -10,10 +10,14 @@ describe("joinRoomValidator", () => {
     return getZodJoinRoomDataValidation().safeParse(message).success;
   }
 
+  type Message = SocketClientToServerEventsData[typeof SocketEvents.JOIN_ROOM];
+
   describe("valid message", () => {
     it("should pass if a valid message is provided", () => {
-      const message: SocketClientToServerEventsData[typeof SocketEvents.JOIN_ROOM] =
-        { id: "abc-defg-ijk" };
+      const message: Message = {
+        id: "abc-defg-ijk",
+        mediaConfig: { audio: true, video: false },
+      };
 
       const isValid = checkIsValid(message);
       expect(isValid).toBe(true);
@@ -36,8 +40,26 @@ describe("joinRoomValidator", () => {
         expect(isValid).toBe(false);
       });
 
+      it("should fail if mediaConfig is missing", () => {
+        const message = { id: "abc-defg-ijk" };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
+      it("should fail if id is missing", () => {
+        const message = { mediaConfig: { audio: true, video: true } };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
       it("should fail if a redundant field is provided", () => {
-        const message = { id: "abc-defg-ijk", extra: "extra" };
+        const message: Message & { extra: string } = {
+          id: "abc-defg-ijk",
+          mediaConfig: { audio: false, video: true },
+          extra: "extra",
+        };
 
         const isValid = checkIsValid(message);
         expect(isValid).toBe(false);
@@ -46,7 +68,20 @@ describe("joinRoomValidator", () => {
 
     describe("invalid value", () => {
       it("should fail if an invalid id is provided", () => {
-        const message = { id: 0e1 };
+        const message = {
+          id: 0e1,
+          mediaConfig: { audio: false, video: false },
+        };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
+      it("should fail if an invalid mediaConfig is provided", () => {
+        const message = {
+          id: "abc-defg-ijk",
+          mediaConfig: { audio: "false", video: false },
+        };
 
         const isValid = checkIsValid(message);
         expect(isValid).toBe(false);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import StringActions from "../../../utils/StringActions.ts";
+import StringActions from "../../utils/StringActions.ts";
 
 describe("StringActions", () => {
   describe("capitalize", () => {
@@ -29,6 +29,13 @@ describe("StringActions", () => {
       const result = StringActions.capitalize(str);
 
       expect(result).toBe("String is not a 12 NUMber 21.");
+    });
+
+    it("should leave an empty string as is", () => {
+      const str = "";
+      const capitalized = StringActions.capitalize(str);
+
+      expect(capitalized).toBe("");
     });
   });
 });
