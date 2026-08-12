@@ -1,6 +1,7 @@
 import type { User } from "#generated/prisma/client.ts";
 import getServerSocket from "#tests/socket/utils/getServerSocket.ts";
 import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
+import { testDeleteRoom } from "#tests/socket/utils/testDeleteRoom.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
@@ -8,7 +9,6 @@ import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.
 import setupDbCleanup from "#tests/utils/setupDb.ts";
 import type { IOClientSocket, IOSocket } from "#types/socket.ts";
 import leaveRoom, { defaultLeaveRoomOptions } from "#utils/leaveRoom.ts";
-import rooms from "#utils/rooms.ts";
 import { SocketEvents, SocketResponseEvents } from "@speak-up/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -40,7 +40,11 @@ describe("leaveRoom", () => {
       SocketResponseEvents.CREATE_ROOM,
     );
 
-    clientSocket.emit(SocketEvents.CREATE_ROOM, { maxMembers: 10 });
+    clientSocket.emit(SocketEvents.CREATE_ROOM, {
+      maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
+    });
+
     const room = ((await firstClientSocketCreateRoomPromise) as { id: string })
       .id;
 
@@ -76,7 +80,11 @@ describe("leaveRoom", () => {
       SocketResponseEvents.CREATE_ROOM,
     );
 
-    firstClientSocket.emit(SocketEvents.CREATE_ROOM, { maxMembers: 10 });
+    firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
+      maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
+    });
+
     const room = ((await firstClientSocketCreateRoomPromise) as { id: string })
       .id;
 
@@ -85,9 +93,12 @@ describe("leaveRoom", () => {
       SocketResponseEvents.JOIN_ROOM,
     );
 
-    secClientSocket.emit(SocketEvents.JOIN_ROOM, { id: room });
-    await secClientSocketCreateRoomPromise;
+    secClientSocket.emit(SocketEvents.JOIN_ROOM, {
+      id: room,
+      mediaConfig: { audio: true, video: true },
+    });
 
+    await secClientSocketCreateRoomPromise;
     const firstServerSocket = getServerSocket<true>(
       testKit.io,
       firstClientSocket.id,
@@ -173,7 +184,7 @@ describe("leaveRoom", () => {
     expect(leftRoom).toBeDefined();
     expect(leftRoom?.id).toBe(room);
 
-    expect(rooms.has(room)).toBe(false);
+    testDeleteRoom(room);
   });
 
   it("should do nothing if the room requested to be left from doesn't exist", async () => {

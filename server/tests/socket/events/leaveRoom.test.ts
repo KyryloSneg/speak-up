@@ -5,7 +5,7 @@ import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
 import testPrivateEvent from "#tests/socket/utils/testPrivateEvent.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
-import waitAfterEmit from "#tests/socket/utilsTests/waitAfterEmit.ts";
+import waitAfterEmit from "#tests/socket/utils/waitAfterEmit.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
@@ -27,11 +27,7 @@ describe("leaveRoom event", () => {
     await testKit.cleanup();
   });
 
-  testPrivateEvent(
-    () => testKit,
-    SocketEvents.LEAVE_ROOM,
-    SocketResponseEvents.LEAVE_ROOM,
-  );
+  testPrivateEvent(() => testKit, SocketEvents.LEAVE_ROOM);
 
   async function setupSockets(
     isToJoinThirdSocketToRoom: boolean = true,
@@ -98,11 +94,13 @@ describe("leaveRoom event", () => {
 
     firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: false, video: false },
     });
 
     if (isToJoinThirdSocketToRoom) {
       thirdClientSocket.emit(SocketEvents.CREATE_ROOM, {
         maxMembers: 10,
+        mediaConfig: { audio: false, video: false },
       });
     }
 
@@ -139,9 +137,12 @@ describe("leaveRoom event", () => {
       SocketResponseEvents.JOIN_ROOM,
     );
 
-    clientSockets.third.emit(SocketEvents.JOIN_ROOM, { id: firstRoom });
-    await joinRoomPromise;
+    clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
+      id: firstRoom,
+      mediaConfig: { audio: false, video: false },
+    });
 
+    await joinRoomPromise;
     const thirdUserLeftPromise = waitFor(
       clientSockets.third,
       SocketEvents.USER_LEFT,

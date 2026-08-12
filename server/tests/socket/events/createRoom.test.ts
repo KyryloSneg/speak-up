@@ -5,7 +5,7 @@ import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
 import testPrivateEvent from "#tests/socket/utils/testPrivateEvent.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
-import waitAfterEmit from "#tests/socket/utilsTests/waitAfterEmit.ts";
+import waitAfterEmit from "#tests/socket/utils/waitAfterEmit.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
@@ -35,10 +35,10 @@ describe("createRoom event", () => {
   });
 
   const validData: SocketClientToServerEventsData[typeof SocketEvents.CREATE_ROOM] =
-    { maxMembers: 10 };
+    { maxMembers: 10, mediaConfig: { audio: true, video: true } };
 
   const invalidData: SocketClientToServerEventsData[typeof SocketEvents.CREATE_ROOM] =
-    { maxMembers: 0 };
+    { maxMembers: 0, mediaConfig: { audio: true, video: true } };
 
   testPrivateEvent(() => testKit, SocketEvents.CREATE_ROOM);
 
@@ -106,6 +106,7 @@ describe("createRoom event", () => {
       removedUserIds: new Set(),
       messages: [],
       maxMembers: validData.maxMembers,
+      mediaConfigs: new Map([[user.id, validData.mediaConfig]]),
     } as Room);
 
     expect([...serverSocket.rooms].some(room => room === roomId)).toBe(true);
@@ -136,6 +137,7 @@ describe("createRoom event", () => {
       removedUserIds: new Set(),
       messages: [],
       maxMembers: validData.maxMembers,
+      mediaConfigs: new Map([[user.id, validData.mediaConfig]]),
     } as Room);
 
     expect(checkIsSocketInRoom(serverSocket, [secRoomId])).toBe(true);

@@ -5,7 +5,7 @@ import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
 import testPrivateEvent from "#tests/socket/utils/testPrivateEvent.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
-import waitAfterEmit from "#tests/socket/utilsTests/waitAfterEmit.ts";
+import waitAfterEmit from "#tests/socket/utils/waitAfterEmit.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
@@ -117,10 +117,12 @@ describe("removeUser event", () => {
 
     firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     fourthClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     const firstCreateRoomRes = await firstCreateRoomPromise;
@@ -137,6 +139,7 @@ describe("removeUser event", () => {
 
       thirdClientSocket.emit(SocketEvents.JOIN_ROOM, {
         id: firstRoom,
+        mediaConfig: { audio: true, video: true },
       });
 
       await thirdJoinRoomPromise;

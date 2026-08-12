@@ -5,7 +5,7 @@ import rooms from "#utils/rooms.ts";
 
 let intervalId: NodeJS.Timeout | null = null;
 
-const INTERVAL_MS = 15 * 60 * 1000;
+export const INTERVAL_MS = 15 * 60 * 1000;
 
 function roomsCleanupLoop(io: IO): NodeJS.Timeout | null {
   if (intervalId) clearInterval(intervalId);

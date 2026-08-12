@@ -6,7 +6,7 @@ import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
 import testPrivateEvent from "#tests/socket/utils/testPrivateEvent.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
-import waitAfterEmit from "#tests/socket/utilsTests/waitAfterEmit.ts";
+import waitAfterEmit from "#tests/socket/utils/waitAfterEmit.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
@@ -38,13 +38,16 @@ describe("sendMessage event", () => {
   type SendMessageData =
     SocketClientToServerEventsData[typeof SocketEvents.SEND_MESSAGE];
 
-  const validDataObj: SendMessageData = {
-    content: [{ type: "text", value: "value" }],
-  };
+  const validDataObj: SendMessageData = [
+    {
+      tempId: "tempId",
+      content: [{ type: "text", value: "value" }],
+    },
+  ];
 
-  const invalidDataObj: SendMessageData = {
-    content: [{ type: "text", value: "" }],
-  };
+  const invalidDataObj: SendMessageData = [
+    { tempId: "invalidTempId", content: [{ type: "text", value: "" }] },
+  ];
 
   testPrivateEvent(() => testKit, SocketEvents.SEND_MESSAGE);
 
@@ -134,10 +137,12 @@ describe("sendMessage event", () => {
 
     firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     fourthClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     const firstCreateRoomRes = await firstCreateRoomPromise;
@@ -154,6 +159,7 @@ describe("sendMessage event", () => {
 
       thirdClientSocket.emit(SocketEvents.JOIN_ROOM, {
         id: firstRoom,
+        mediaConfig: { audio: true, video: true },
       });
 
       await thirdJoinRoomPromise;
@@ -221,13 +227,18 @@ describe("sendMessage event", () => {
 
     const receivedMessageRes = await receivedMessagePromise;
 
-    expect(Object.keys(sendMessageRes?.message || {}).length).toBe(5);
+    expect(Object.keys(sendMessageRes?.message || {}).length).toBe(6);
 
     expect(sendMessageRes?.message.id).toBeTypeOf("string");
-    expect(sendMessageRes?.message.userId).toBe(users.first.id);
-    expect(sendMessageRes?.message.content).toStrictEqual(validDataObj.content);
-    expect(sendMessageRes?.message.createdAt).toBeTypeOf("string");
+    expect(sendMessageRes?.message.tempId).toStrictEqual(
+      validDataObj[0].tempId,
+    );
 
+    expect(sendMessageRes?.message.userId).toBe(users.first.id);
+    expect(sendMessageRes?.message.content).toStrictEqual(
+      validDataObj[0].content,
+    );
+    expect(sendMessageRes?.message.createdAt).toBeTypeOf("string");
     expect(Object.keys(sendMessageRes?.message.user || {}).length).toBe(2);
 
     expect(sendMessageRes?.message.user.nickname).toBe(users.first.nickname);
@@ -308,6 +319,7 @@ describe("sendMessage event", () => {
     const res = await sendMessagePromise;
     expect(res).toStrictEqual({
       error: SocketResponseErrorMessages.UNEXPECTED_ERROR,
+      tempId: validDataObj[0].tempId,
     });
 
     expect(rooms.get(firstRoom)?.messages).toHaveLength(0);

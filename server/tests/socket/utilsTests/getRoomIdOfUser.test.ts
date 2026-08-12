@@ -54,7 +54,11 @@ describe("cleanupSocket", () => {
       SocketResponseEvents.CREATE_ROOM,
     );
 
-    firstClientSocket.emit(SocketEvents.CREATE_ROOM, { maxMembers: 10 });
+    firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
+      maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
+    });
+
     const room = ((await firstClientSocketCreateRoomPromise) as { id: string })
       .id;
 
@@ -63,9 +67,12 @@ describe("cleanupSocket", () => {
       SocketResponseEvents.SEND_MESSAGE,
     );
 
-    secClientSocket.emit(SocketEvents.SEND_MESSAGE, {
-      content: [{ type: "text", value: "value" }],
-    });
+    secClientSocket.emit(SocketEvents.SEND_MESSAGE, [
+      {
+        tempId: "tempId",
+        content: [{ type: "text", value: "value" }],
+      },
+    ]);
 
     await secClientSocketSendMessagePromise;
     const thirdClientSocketSendMediaConfigPromise = waitFor(

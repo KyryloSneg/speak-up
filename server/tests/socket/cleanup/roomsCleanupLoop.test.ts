@@ -1,5 +1,6 @@
-import roomsCleanupLoop from "#cleanup/roomsCleanupLoop.ts";
+import roomsCleanupLoop, { INTERVAL_MS } from "#cleanup/roomsCleanupLoop.ts";
 import getRoomSockets from "#services/getRoomSockets.ts";
+import { testDeleteRoom } from "#tests/socket/utils/testDeleteRoom.ts";
 import type { IO } from "#types/socket.ts";
 import rooms from "#utils/rooms.ts";
 import {
@@ -19,7 +20,6 @@ vi.mock("#services/getRoomSockets.ts", () => ({
 
 describe("roomsCleanupLoop", () => {
   const mockIo = {} as unknown as IO;
-  const INTERVAL_MS = 15 * 60 * 1000;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -36,7 +36,6 @@ describe("roomsCleanupLoop", () => {
     rooms.set("activeRoomId", { messages: [] } as any);
 
     (getRoomSockets as Mock).mockImplementation(async (_, roomId) => {
-      if (roomId === "emptyRoomId") return [];
       if (roomId === "activeRoomId") return [{ id: "socketId" }];
 
       return [];
@@ -46,7 +45,7 @@ describe("roomsCleanupLoop", () => {
 
     await vi.advanceTimersByTimeAsync(INTERVAL_MS);
 
-    expect(rooms.has("emptyRoomId")).toBe(false);
+    testDeleteRoom("emptyRoomId");
     expect(rooms.has("activeRoomId")).toBe(true);
   });
 
@@ -65,7 +64,7 @@ describe("roomsCleanupLoop", () => {
     await vi.advanceTimersByTimeAsync(INTERVAL_MS);
 
     expect(rooms.has("brokenRoomID")).toBe(true);
-    expect(rooms.has("subsequentEmptyRoomId")).toBe(false);
+    testDeleteRoom("subsequentEmptyRoomId");
   });
 
   it("should override clear the previous interval if a new one was initialized", () => {
