@@ -32,7 +32,7 @@ function optimizeAudioSdp(sdp: string): string {
 
   return fmtpMatch
     ? sdp.replace(fmtpRegex, newFmtpLine)
-    : sdp.replace(opusMatch[0], `${opusMatch[0]}\r\na=${newFmtpLine}`);
+    : sdp.replace(opusMatch[0], `${opusMatch[0]}\r\n${newFmtpLine}`);
 }
 
 export default optimizeAudioSdp;

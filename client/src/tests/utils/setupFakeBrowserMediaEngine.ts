@@ -33,17 +33,20 @@ function setupFakeBrowserMediaEngine(
   const permissionsManager = new FakePermissionsManager();
   permissionsManager.reset(initialPermissionsDefault);
 
-  class FakeMediaStreamTrack {
+  class FakeMediaStreamTrack extends EventTarget {
     public enabled: boolean;
     public readyState: "live" | "ended";
     public kind: "audio" | "video";
     public id: string;
+    public onended: ((this: MediaStreamTrack, e: Event) => void) | null = null;
     private constraints: MediaTrackConstraints = {};
 
     constructor(
       kind: "audio" | "video",
       incomingConstraints: MediaTrackConstraints = {},
     ) {
+      super();
+
       this.enabled = true;
       this.readyState = "live";
       this.kind = kind;
@@ -57,7 +60,19 @@ function setupFakeBrowserMediaEngine(
     }
 
     stop() {
+      if (this.readyState === "ended") return;
       this.readyState = "ended";
+
+      const event = new Event("ended");
+      this.dispatchEvent(event);
+    }
+
+    override dispatchEvent(event: Event): boolean {
+      const result = super.dispatchEvent(event);
+      if (event.type === "ended" && typeof this.onended === "function") {
+        this.onended.call(this as unknown as MediaStreamTrack, event);
+      }
+      return result;
     }
 
     getConstraints() {
@@ -82,13 +97,15 @@ function setupFakeBrowserMediaEngine(
     }
   }
 
-  class FakeMediaStream {
+  class FakeMediaStream extends EventTarget {
     public id: string;
     public tracks: FakeMediaStreamTrack[];
 
-    constructor(tracks: FakeMediaStreamTrack[]) {
+    constructor(tracks?: FakeMediaStreamTrack[]) {
+      super();
+
       this.id = `stream-${Math.random()}`;
-      this.tracks = tracks;
+      this.tracks = tracks || [];
     }
 
     getTracks() {
@@ -139,6 +156,23 @@ function setupFakeBrowserMediaEngine(
           typeof config.video === "boolean" ? {} : config.video;
 
         tracks.push(new FakeMediaStreamTrack("video", videoConstraints));
+      }
+
+      return new FakeMediaStream(tracks);
+    }),
+    getDisplayMedia: safeMockFn(async (config?: DisplayMediaStreamOptions) => {
+      const videoConstraints =
+        typeof config?.video === "boolean" ? {} : (config?.video ?? {});
+
+      const tracks: FakeMediaStreamTrack[] = [
+        new FakeMediaStreamTrack("video", videoConstraints),
+      ];
+
+      if (config?.audio) {
+        const audioConstraints =
+          typeof config.audio === "boolean" ? {} : config.audio;
+
+        tracks.push(new FakeMediaStreamTrack("audio", audioConstraints));
       }
 
       return new FakeMediaStream(tracks);

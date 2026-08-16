@@ -92,7 +92,7 @@ function useSingleUserMediaStreamFallback(
           await start();
         }
       },
-      { deep: true },
+      { immediate: true, deep: true },
     );
   }
 

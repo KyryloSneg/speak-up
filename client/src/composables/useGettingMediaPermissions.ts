@@ -8,7 +8,7 @@ function useGettingMediaPermissions() {
   const micPermission = usePermission("microphone");
   const cameraPermission = usePermission("camera");
 
-  const { stream, start, stop } = useUserMedia({
+  const { start, stop } = useUserMedia({
     constraints: { video: true, audio: true },
   });
 

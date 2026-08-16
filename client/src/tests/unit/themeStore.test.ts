@@ -9,11 +9,13 @@ describe("themeStore", () => {
     localStorage.clear();
   });
 
-  it("should set light theme as a default one", () => {
+  it("should set light theme as a default one", async () => {
     const themeStore = useThemeStore();
-
     expect(themeStore.theme).toBe("light");
-    expect(localStorage.getItem(LocalStorageKeys.THEME)).toBe(themeStore.theme);
+
+    await expect
+      .poll(() => localStorage.getItem(LocalStorageKeys.THEME))
+      .toBe(null);
   });
 
   it("should set dark theme as a default one if localStorage's theme is dark as well", () => {

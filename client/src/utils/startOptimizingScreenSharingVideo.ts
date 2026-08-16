@@ -27,6 +27,7 @@ function startOptimizingScreenSharingVideo(
   } = options;
 
   if (!window.OffscreenCanvas) return () => {};
+  let videoElem: HTMLVideoElement | undefined;
 
   const cleanup = () => {
     const trackInfo = optimizedTracks.get(track.id);
@@ -60,7 +61,7 @@ function startOptimizingScreenSharingVideo(
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
   if (!ctx) return cleanup;
-  const videoElem = document.createElement("video");
+  videoElem = document.createElement("video");
 
   videoElem.srcObject = new MediaStream([track]);
   videoElem.muted = true;

@@ -22,14 +22,14 @@ describe("useSendingNewMediaConfig", () => {
     useSendingNewMediaConfig();
     await nextTick();
 
-    const room: Room = {
+    const room = {
       id: "id",
       users: [
         { id: "id" } as unknown as UserDto,
         { id: "anotherId" } as unknown as UserDto,
       ],
       messages: [],
-    } as const;
+    } as unknown as Room;
 
     roomStore.room = room;
     await nextTick();
@@ -47,11 +47,11 @@ describe("useSendingNewMediaConfig", () => {
     await nextTick();
 
     expect(sendMediaConfigSpy).not.toHaveBeenCalled();
-    const room: Room = {
+    const room = {
       id: "id",
       users: [{ id: "id" } as unknown as UserDto],
       messages: [],
-    } as const;
+    } as unknown as Room;
 
     roomStore.room = room;
 

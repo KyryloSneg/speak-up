@@ -126,7 +126,7 @@ export function useAudioNoiseGate(
         let sum = 0;
         for (let i = 0; i < dataArray.length; i++) {
           const bytes = dataArray[i];
-          if (!bytes) return;
+          if (!bytes) continue;
 
           sum += bytes;
         }

@@ -256,6 +256,9 @@ export const useMediaStore = defineStore("media", () => {
 
     stopScreenSharing();
     mediaDevice.stop();
+
+    // stop the gated audio track too
+    userMediaStream.value?.getTracks().forEach(track => track.stop());
   }
 
   const userMediaStream = useAudioNoiseGate(rawUserMediaStream);

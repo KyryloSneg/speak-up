@@ -26,6 +26,8 @@ describe("authStore", () => {
     expect(authStore.user).toBeNull();
     expect(authStore.isAuth).toBe(false);
     expect(authStore.isInitialized).toBe(false);
+    expect(authStore.isGettingInitialized).toBe(false);
+
     expect(authStore.initAuth).toBeTypeOf("function");
   });
 
@@ -49,6 +51,7 @@ describe("authStore", () => {
       expect(authStore.user).toEqual(mockRes.data.user);
       expect(authStore.isAuth).toBe(true);
       expect(authStore.isInitialized).toBe(true);
+      expect(authStore.isGettingInitialized).toBe(false);
 
       expect(localStorage.getItem(LocalStorageKeys.ACCESS_TOKEN)).toBe(
         mockRes.data.tokens.accessToken,

@@ -1,13 +1,16 @@
 import type { StartUserMediaOnError } from "@/services/MediaDevice";
 import { useMediaStore } from "@/stores/media";
 import { useMediaSettingsStore } from "@/stores/mediaSettings";
+import { useWebRTCStore } from "@/stores/webrtc";
+import mockSocket from "@/tests/unit/utils/mockSocket";
 import {
   mockCameras,
   mockDevices,
   mockMicrophones,
 } from "@/tests/utils/mediaConsts";
-import mockSocket from "@/tests/unit/utils/mockSocket";
+import setupFakeBrowserAudioContext from "@/tests/utils/setupFakeBrowserAudioContext";
 import setupFakeBrowserMediaEngine from "@/tests/utils/setupFakeBrowserMediaEngine";
+import setupFakeWebRTCEngine from "@/tests/utils/setupFakeBrowserWebRTCEngine";
 import {
   FacingModes,
   type RoomMediaConfig,
@@ -34,7 +37,10 @@ vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
 describe("mediaStore", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+
     setupFakeBrowserMediaEngine();
+    setupFakeBrowserAudioContext();
+    setupFakeWebRTCEngine();
 
     mockSocket.resetMock();
     mediaDevice.stop();
@@ -48,9 +54,12 @@ describe("mediaStore", () => {
   });
 
   describe("init", () => {
-    it("should initialize roomConfigs as null", () => {
+    it("should initialize roomConfigs, rawUserMediaStream, and screenSharingStream as null", () => {
       const mediaStore = useMediaStore();
       expect(mediaStore.roomConfigs).toBeNull();
+      expect(mediaStore.rawUserMediaStream).toBeNull();
+      expect(mediaStore.screenSharingStream).toBeNull();
+      expect(mediaStore.hasStartedMedia).toBe(false);
     });
   });
 
@@ -216,17 +225,21 @@ describe("mediaStore", () => {
         deviceId?: string | null,
       ): Promise<void> {
         await vi.waitFor(() => {
-          const tracks =
+          const processedTracks =
             type === "audio"
               ? mediaStore.userMediaStream!.getAudioTracks()
               : mediaStore.userMediaStream!.getVideoTracks();
 
-          const track = tracks[0]!;
+          expect(processedTracks.length).toBe(1);
 
-          expect(tracks.length).toBe(1);
-          expect(getMediaTrackDeviceId(track.getConstraints())).toBe(deviceId);
+          const targetTrack =
+            type === "audio"
+              ? mediaStore.rawUserMediaStream!.getAudioTracks()[0]!
+              : processedTracks[0]!;
 
-          if (type === "audio") expect(mediaStore.userAudioTrack).toBe(track);
+          expect(getMediaTrackDeviceId(targetTrack.getConstraints())).toBe(
+            deviceId,
+          );
         });
       }
 
@@ -292,7 +305,9 @@ describe("mediaStore", () => {
       expect(mediaStore.hasStartedMedia).toBe(true);
 
       await vi.waitFor(() => expect(mediaStore.userMediaStream).not.toBeNull());
-      expect(mediaStore.userAudioTrack).not.toBeNull();
+      expect(
+        mediaStore.userMediaStream?.getAudioTracks().length,
+      ).toBeGreaterThan(0);
     });
 
     it("should properly handle an error while updating devices", async () => {
@@ -333,7 +348,7 @@ describe("mediaStore", () => {
       mediaStore.config = { audio: true, video: true };
 
       mediaStore.start();
-      mediaStore.start(); // ignored, .toHaveBeenCalledOnce will ensure this later
+      mediaStore.start(); // ignored
 
       expect(mediaStore.hasStartedMedia).toBe(true);
       await vi.waitFor(() => expect(mediaStore.userMediaStream).not.toBeNull());
@@ -344,10 +359,10 @@ describe("mediaStore", () => {
       expect(audioTracks.length).toBe(1);
       expect(videoTracks.length).toBe(1);
 
-      const audioTrack = audioTracks[0]!;
+      const rawAudioTrack = mediaStore.rawUserMediaStream!.getAudioTracks()[0]!;
       const videoTrack = videoTracks[0]!;
 
-      expect(getMediaTrackDeviceId(audioTrack.getConstraints())).toBe(
+      expect(getMediaTrackDeviceId(rawAudioTrack.getConstraints())).toBe(
         mediaSettingsStore.selectedDevices.microphone,
       );
 
@@ -356,7 +371,6 @@ describe("mediaStore", () => {
       );
 
       expect(videoTrack.getSettings().facingMode).toBe(FacingModes.USER);
-      expect(mediaStore.userAudioTrack).toBe(audioTrack);
 
       expect(
         mediaStore
@@ -392,13 +406,12 @@ describe("mediaStore", () => {
       expect(audioTracks.length).toBe(1);
       expect(videoTracks.length).toBe(0);
 
-      const audioTrack = audioTracks[0]!;
+      const rawAudioTrack = mediaStore.rawUserMediaStream!.getAudioTracks()[0]!;
 
-      expect(getMediaTrackDeviceId(audioTrack.getConstraints())).toBe(
+      expect(getMediaTrackDeviceId(rawAudioTrack.getConstraints())).toBe(
         mediaSettingsStore.selectedDevices.microphone,
       );
 
-      expect(mediaStore.userAudioTrack).toBe(audioTrack);
       expect(
         mediaStore
           .userMediaStream!.getTracks()
@@ -491,23 +504,100 @@ describe("mediaStore", () => {
       mediaStore.start();
       await vi.waitFor(() => expect(toast.error).toHaveBeenCalledTimes(2));
 
-      expect(mediaStore.userMediaStream).toBeNull();
+      expect(mediaStore.rawUserMediaStream).toBeNull();
+    });
+  });
+
+  describe("startScreenSharing and stopScreenSharing", () => {
+    it("should properly start screen sharing and dispatch stream to webRTCStore", () => {
+      const mediaStore = useMediaStore();
+      const webRTCStore = useWebRTCStore();
+
+      const sendScreenSharingSpy = vi
+        .spyOn(webRTCStore, "sendScreenSharing")
+        .mockImplementation(() => {});
+
+      const startScreenSharingSpy = vi.spyOn(mediaDevice, "startScreenSharing");
+
+      const offSpy = vi.spyOn(mediaDevice, "off");
+      const onSpy = vi.spyOn(mediaDevice, "on");
+
+      mediaStore.startScreenSharing();
+
+      expect(startScreenSharingSpy).toHaveBeenCalledOnce();
+
+      expect(offSpy).toHaveBeenCalledWith(
+        MediaDeviceEvents.SCREEN_SHARING_STREAM,
+      );
+      expect(onSpy).toHaveBeenCalledWith(
+        MediaDeviceEvents.SCREEN_SHARING_STREAM,
+        expect.any(Function),
+      );
+
+      const mockScreenStream = new MediaStream() as any;
+      const fakeVideoTrack = new MediaStreamTrack();
+      Object.defineProperty(fakeVideoTrack, "kind", { value: "video" });
+      mockScreenStream.addTrack(fakeVideoTrack);
+
+      mediaDevice.emit(
+        MediaDeviceEvents.SCREEN_SHARING_STREAM,
+        mockScreenStream,
+      );
+
+      expect(mediaStore.screenSharingStream).toBe(mockScreenStream);
+      expect(sendScreenSharingSpy).toHaveBeenCalledExactlyOnceWith(
+        mockScreenStream,
+      );
+    });
+
+    it("should properly handle error when screen sharing fails to start", () => {
+      const mediaStore = useMediaStore();
+      const errorMessage = "Screen sharing permission denied";
+
+      vi.spyOn(mediaDevice, "startScreenSharing").mockImplementation(
+        onError => {
+          onError?.({
+            message: errorMessage,
+            error: new Error(errorMessage),
+          });
+        },
+      );
+
+      mediaStore.startScreenSharing();
+      expect(toast.error).toHaveBeenCalledExactlyOnceWith(errorMessage);
+    });
+
+    it("should properly trigger stop screen sharing on mediaDevice", () => {
+      const mediaStore = useMediaStore();
+      const stopScreenSharingSpy = vi.spyOn(mediaDevice, "stopScreenSharing");
+
+      mediaStore.stopScreenSharing();
+      expect(stopScreenSharingSpy).toHaveBeenCalledOnce();
     });
   });
 
   describe("stop", () => {
-    it("should properly stop current stream", async () => {
+    it("should properly stop current stream and screen sharing", async () => {
       const mediaStore = useMediaStore();
+      const stopScreenSharingSpy = vi.spyOn(mediaDevice, "stopScreenSharing");
 
       mediaStore.start();
       await vi.waitFor(() => expect(mediaStore.userMediaStream).not.toBeNull());
 
       mediaStore.stop();
-      expect(
-        mediaStore
-          .userMediaStream!.getTracks()
-          .every(track => track.readyState === "ended"),
-      ).toBe(true);
+
+      expect(stopScreenSharingSpy).toHaveBeenCalledTimes(2);
+      expect(mediaStore.hasStartedMedia).toBe(false);
+
+      if (mediaStore.userMediaStream) {
+        expect(
+          mediaStore.userMediaStream
+            .getTracks()
+            .every(track => track.readyState === "ended"),
+        ).toBe(true);
+      } else {
+        expect(mediaStore.userMediaStream).toBeNull();
+      }
     });
   });
 
