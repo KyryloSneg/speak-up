@@ -3,9 +3,13 @@ import { globalStyle, style } from "@vanilla-extract/css";
 
 export const root = style({
   position: "relative",
-  // text gets messed up during scrolling without this will-change
-  // (in UIDialog)
-  willChange: "opacity",
+  selectors: {
+    // text gets messed up during scrolling without this will-change
+    // (in UIDialog)
+    '[data-slot="dialog-content"] &': {
+      willChange: "opacity",
+    },
+  },
 });
 
 export const list = style({
