@@ -119,7 +119,7 @@ function useMemberCardsLayout(
   });
 
   const layout = computed(() => ({
-    ...(rawLayout.value || {}),
+    ...rawLayout.value,
     initLastVisibleItem: initLastVisibleItem.value,
   }));
 

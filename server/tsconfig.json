@@ -4,9 +4,8 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "strict": true
   },
   "include": ["**/*"]
 }

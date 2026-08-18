@@ -11,7 +11,7 @@ type Cleanup = () => void;
 
 const optimizedTracks = new Map<
   MediaStreamTrack["id"],
-  { senders: Set<RTCRtpSender>; intervalId?: NodeJS.Timeout }
+  { senders: Set<RTCRtpSender>; intervalId?: number }
 >();
 
 function startOptimizingScreenSharingVideo(

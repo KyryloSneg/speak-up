@@ -35,7 +35,7 @@ export function useAudioNoiseGate(
     let analyser: AnalyserNode | null = null;
     let gainNode: GainNode | null = null;
     let destination: MediaStreamAudioDestinationNode | null = null;
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: number | null = null;
     let currentAudioTrack: MediaStreamTrack | null = null;
 
     const cleanup = () => {

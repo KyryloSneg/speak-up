@@ -46,7 +46,7 @@ export const useChatStore = defineStore("chat", () => {
     const elem = scrollTemplateRef.value?.viewport;
     if (!elem) return;
 
-    elem.scrollTo({ left: x, top: y, ...(options || {}) });
+    elem.scrollTo({ left: x, top: y, ...options });
   }
 
   return {
