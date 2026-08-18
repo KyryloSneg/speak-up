@@ -1,6 +1,6 @@
 import type { JWTPayload, JWTPayloadRaw } from "#types/jwtPayload.ts";
 
-function filterJwtPayload(payload: JWTPayload): JWTPayloadRaw {
+function filterJwtPayload(payload: JWTPayload | JWTPayloadRaw): JWTPayloadRaw {
   const jwtPayload: JWTPayloadRaw = { userId: payload.userId } as const;
   return jwtPayload;
 }

@@ -5,6 +5,10 @@
       text: 'Have an account? Sign In',
       to: RoutesWithoutParams.SIGN_IN,
     }"
+    :invisibleFocus="{
+      text: 'Go back to the header',
+      props: { selector: 'header' },
+    }"
     :submitButton="{
       text: 'Register',
       submit,
@@ -15,7 +19,7 @@
     :titleClass="styles.title"
     :actionClass="styles.action"
   >
-    <UIFieldGroup>
+    <UIFieldGroup :id="authLayoutFieldGroupId">
       <FormField name="nickname" :autofocus="true" />
       <FormField name="username" />
       <FormField name="password" type="password" />
@@ -33,6 +37,7 @@ import router from "@/router";
 import { useAuthStore } from "@/stores/auth";
 import { LocalStorageKeys } from "@/types/localStorage";
 import { RoutesWithoutParams } from "@/types/routes";
+import { authLayoutFieldGroupId } from "@/utils/idConsts";
 import { getZodRegisterBodyValidation } from "@speak-up/shared";
 import { toTypedSchema } from "@vee-validate/zod";
 import { useForm } from "vee-validate";

@@ -33,7 +33,7 @@ describe("useGettingAllMediaDevices", () => {
       expect(navigator.mediaDevices.enumerateDevices).not.toHaveBeenCalled();
     });
 
-    it("shouldn't retrieve devices if all permissions are prompted", async () => {
+    it("should enumerate devices but yield empty array if permissions are prompted", async () => {
       const mediaStore = useMediaStore();
       const permissionsStore = usePermissionsStore();
 
@@ -44,7 +44,7 @@ describe("useGettingAllMediaDevices", () => {
       await nextTick();
 
       expect(mediaStore.devices.length).toBe(0);
-      expect(navigator.mediaDevices.enumerateDevices).not.toHaveBeenCalled();
+      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledOnce();
     });
   });
 
@@ -101,29 +101,31 @@ describe("useGettingAllMediaDevices", () => {
       useGettingAllMediaDevices();
       await nextTick();
 
+      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(1);
+
       permissionsStore.microphone = "granted";
       await nextTick();
 
       expect(mediaStore.devices).toStrictEqual(mockMicrophones);
-      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledOnce();
+      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(2);
 
       permissionsStore.camera = "granted";
       await nextTick();
 
       expect(mediaStore.devices).toStrictEqual(mockUserMediaDevices);
-      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(2);
+      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(3);
 
       permissionsStore.microphone = "denied";
       await nextTick();
 
       expect(mediaStore.devices).toStrictEqual(mockCameras);
-      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(3);
+      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(4);
 
       permissionsStore.camera = "denied";
       await nextTick();
 
       expect(mediaStore.devices.length).toBe(0);
-      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(3);
+      expect(navigator.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(4);
     });
 
     it("should properly react to 'devicechange' event", async () => {

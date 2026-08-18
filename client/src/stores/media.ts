@@ -1,7 +1,10 @@
+import useAudioNoiseGate from "@/composables/useAudioNoiseGate";
+import useIsVideoActive from "@/composables/useIsVideoActive";
 import MediaDevice, {
   type StartUserMediaOnError,
 } from "@/services/MediaDevice";
 import { useMediaSettingsStore } from "@/stores/mediaSettings";
+import { useWebRTCStore } from "@/stores/webrtc";
 import {
   FacingModes,
   type RoomMediaConfigs,
@@ -21,11 +24,16 @@ import { toast } from "vue-sonner";
 
 export const useMediaStore = defineStore("media", () => {
   const devices = ref<MediaDeviceInfo[]>([]);
-  const userMediaStream = shallowRef<MediaDevice["userMediaStream"] | null>(
+  const rawUserMediaStream = shallowRef<MediaDevice["userMediaStream"] | null>(
     null,
   );
 
+  const screenSharingStream = shallowRef<
+    MediaDevice["screenSharingStream"] | null
+  >(null);
+
   const userAudioTrack = shallowRef<MediaStreamTrack | null>(null);
+  const userVideoTrack = shallowRef<MediaStreamTrack | null>(null);
 
   const config = ref<SocketMediaConfig>({ audio: true, video: true });
   const isCameraFlipped = ref(false);
@@ -81,6 +89,8 @@ export const useMediaStore = defineStore("media", () => {
       return;
     }
 
+    if (!config.value.audio && !config.value.video) return;
+
     const onError: StartUserMediaOnError = info => {
       toast.error(info.message);
     };
@@ -106,6 +116,8 @@ export const useMediaStore = defineStore("media", () => {
 
   function start(): void {
     if (hasStartedMedia.value) return;
+    if (!config.value.audio && !config.value.video) return;
+
     hasStartedMedia.value = true;
 
     let errorsAmount = 0;
@@ -122,71 +134,134 @@ export const useMediaStore = defineStore("media", () => {
       if (errorsAmount === maxErrorsAmount) hasStartedMedia.value = false;
     };
 
-    const mediaSettingsStore = useMediaSettingsStore();
-    const { microphone: selectedMic, camera: selectedCamera } =
-      mediaSettingsStore.selectedDevices;
+    const startMediaTrack = (type: "audio" | "video"): void => {
+      const onErrorWithPossibleFallback: StartUserMediaOnError = info => {
+        const mediaSettingsStore = useMediaSettingsStore();
+        const selectedDevice =
+          mediaSettingsStore.selectedDevices[
+            type === "audio" ? "microphone" : "camera"
+          ];
 
-    // always provide fake "default" instead of the actual default camera id
-    // (replacing "default" with the actual default camera id is unwanted in the
-    // future, so we do this hack)
-    // ("default" is relevant only for the mic, not for the camera)
-    const selectedCameraToUse =
-      selectedCamera === mediaSettingsStore.defaultCamera
-        ? "default"
-        : selectedCamera;
+        const defaultDevice =
+          type === "audio" ? "default" : mediaSettingsStore.defaultCamera;
+
+        if (
+          info.error?.name === "OverconstrainedError" &&
+          selectedDevice !== defaultDevice
+        ) {
+          // this error can happen if user uses a device in one session that is
+          // absent in the next one, so explicit .deviceId (with "exact" option)
+          // is set. we can't always use "ideal" instead because the UI won't be
+          // synced with the device actually used
+          if (type === "audio") {
+            mediaSettingsStore.selectedMicrophone = defaultDevice;
+          } else {
+            mediaSettingsStore.selectedCamera = defaultDevice;
+          }
+
+          // if this error occurs again, go straight to the base onError
+          startTrack(onError);
+        } else {
+          // "critical" error
+          onError(info);
+        }
+      };
+
+      function calcConstraints() {
+        const mediaSettingsStore = useMediaSettingsStore();
+        const { microphone: selectedMic, camera: selectedCamera } =
+          mediaSettingsStore.selectedDevices;
+
+        // always provide fake "default" instead of the actual default camera id
+        // (replacing "default" with the actual default camera id is unwanted in the
+        // future, so we do this hack)
+        // ("default" is relevant only for the mic, not for the camera)
+        const selectedCameraToUse =
+          selectedCamera === mediaSettingsStore.defaultCamera
+            ? "default"
+            : selectedCamera;
+
+        const audioConstraints: MediaTrackConstraints = {
+          deviceId: {
+            [selectedMic === "default" ? "ideal" : "exact"]: selectedMic,
+          },
+        } as const;
+
+        const videoConstraints: MediaTrackConstraints = {
+          deviceId: {
+            [selectedCameraToUse === "default" ? "ideal" : "exact"]:
+              selectedCameraToUse,
+          },
+          facingMode: isCameraFlipped.value
+            ? FacingModes.ENVIRONMENT
+            : FacingModes.USER,
+        } as const;
+
+        return { audioConstraints, videoConstraints };
+      }
+
+      function startTrack(onError: StartUserMediaOnError): void {
+        const { audioConstraints, videoConstraints } = calcConstraints();
+        mediaDevice.startUserMedia(
+          {
+            audio: type === "audio" ? config.value.audio : false,
+            video: type === "video" ? config.value.video : false,
+          },
+          {
+            audioConstraints: type === "audio" ? audioConstraints : undefined,
+            videoConstraints: type === "video" ? videoConstraints : undefined,
+            onError,
+          },
+        );
+      }
+
+      startTrack(onErrorWithPossibleFallback);
+    };
 
     mediaDevice
       .off(MediaDeviceEvents.USER_MEDIA_STREAM)
       .on(MediaDeviceEvents.USER_MEDIA_STREAM, stream => {
-        userMediaStream.value = stream as MediaDevice["userMediaStream"];
-        userAudioTrack.value =
-          userMediaStream.value?.getAudioTracks()[0] || null;
+        const typedStream = stream as MediaDevice["userMediaStream"];
+        rawUserMediaStream.value = typedStream;
       });
-
-    const audioConstraints: MediaTrackConstraints = {
-      deviceId: {
-        [selectedMic === "default" ? "ideal" : "exact"]: selectedMic,
-      },
-    } as const;
-
-    const videoConstraints: MediaTrackConstraints = {
-      deviceId: {
-        [selectedCameraToUse === "default" ? "ideal" : "exact"]:
-          selectedCameraToUse,
-      },
-      facingMode: isCameraFlipped.value
-        ? FacingModes.ENVIRONMENT
-        : FacingModes.USER,
-    } as const;
 
     // start audio and video as separate tracks. this helps in situations when a
     // specific track (A) fails and the second one (B) isn't, so track A error
     // doesn't disrupt track B
 
-    // audio
-    mediaDevice.startUserMedia(
-      { audio: config.value.audio, video: false },
-      {
-        audioConstraints,
-        onError,
-      },
-    );
+    startMediaTrack("audio");
+    startMediaTrack("video");
+  }
 
-    // video
-    mediaDevice.startUserMedia(
-      { audio: false, video: config.value.video },
-      {
-        videoConstraints,
-        onError,
-      },
-    );
+  function startScreenSharing(): void {
+    mediaDevice
+      .off(MediaDeviceEvents.SCREEN_SHARING_STREAM)
+      .on(MediaDeviceEvents.SCREEN_SHARING_STREAM, stream => {
+        const typedStream = stream as MediaDevice["screenSharingStream"];
+        screenSharingStream.value = typedStream;
+
+        const webRTCStore = useWebRTCStore();
+        webRTCStore.sendScreenSharing(typedStream);
+      });
+
+    mediaDevice.startScreenSharing(info => toast.error(info.message));
+  }
+
+  function stopScreenSharing(): void {
+    mediaDevice.stopScreenSharing();
   }
 
   function stop(): void {
     hasStartedMedia.value = false;
+
+    stopScreenSharing();
     mediaDevice.stop();
+
+    // stop the gated audio track too
+    userMediaStream.value?.getTracks().forEach(track => track.stop());
   }
 
+  const userMediaStream = useAudioNoiseGate(rawUserMediaStream);
   const microphones = computed(() =>
     devices.value.filter(device => device?.kind === "audioinput"),
   );
@@ -195,16 +270,22 @@ export const useMediaStore = defineStore("media", () => {
     devices.value.filter(device => device?.kind === "videoinput"),
   );
 
+  const isSharingScreen = useIsVideoActive(screenSharingStream);
+
   return {
     devices,
-    userMediaStream,
+    rawUserMediaStream,
+    screenSharingStream,
     userAudioTrack,
+    userVideoTrack,
     config,
     isCameraFlipped,
     roomConfigs,
     hasStartedMedia,
+    userMediaStream,
     microphones,
     cameras,
+    isSharingScreen,
     bindEvents,
     sendMediaConfig,
     toggleMic,
@@ -212,6 +293,8 @@ export const useMediaStore = defineStore("media", () => {
     flipCamera,
     updateDevices,
     start,
+    startScreenSharing,
+    stopScreenSharing,
     stop,
   };
 });

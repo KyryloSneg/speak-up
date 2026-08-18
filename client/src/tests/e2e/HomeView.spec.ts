@@ -374,6 +374,7 @@ test.describe("HomeView", () => {
     test("should properly handle successful join using room id from dynamic params", async ({
       page,
     }) => {
+      await setupE2EFakeBrowserMediaEngine(page); // fixes chromium
       await page.goto(RoutesWithoutParams.HOME + mockRoomId);
 
       const submitButton = page.getByRole("button", { name: "Join" });
@@ -387,6 +388,33 @@ test.describe("HomeView", () => {
 
       await submitButton.click();
       await expect(page).toHaveURL(RoutesWithoutParams.ROOM);
+    });
+
+    test("should properly handle invisible focus buttons", async ({ page }) => {
+      await page.goto(RoutesWithoutParams.HOME);
+
+      const header = page.getByRole("banner").first();
+      const firstHeaderButton = header.getByRole("button").nth(1);
+
+      const cardFocusButton = page.getByRole("button", {
+        name: "Go back to the header",
+      });
+
+      const headerFocusButton = page.getByRole("button", {
+        name: "Skip to the main content",
+      });
+
+      const input = page.locator('input[name="id"]');
+
+      await cardFocusButton.focus();
+      await cardFocusButton.click();
+
+      await expect(firstHeaderButton).toBeFocused();
+
+      await headerFocusButton.focus();
+      await headerFocusButton.click();
+
+      await expect(input).toBeFocused();
     });
   });
 });

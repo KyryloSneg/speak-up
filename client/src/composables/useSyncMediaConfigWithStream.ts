@@ -19,7 +19,7 @@ function useSyncMediaConfigWithStream() {
 
     if (liveTracks.length) {
       mediaDevice.toggleUserMedia(type, value);
-    } else {
+    } else if (value) {
       // request device
       const micOrCamStr = type === "audio" ? "microphone" : "camera";
       const otherDeviceStr = type === "audio" ? "camera" : "microphone";

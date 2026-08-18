@@ -1,72 +1,64 @@
+import useSingleUserMediaStreamFallback from "@/composables/useSingleUserMediaStreamFallback";
 import { useMediaStore } from "@/stores/media";
-import { useMediaSettingsStore } from "@/stores/mediaSettings";
 import { usePermissionsStore } from "@/stores/permissions";
-import { useUserMedia } from "@vueuse/core";
-import { computed, onUnmounted, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { computed, type ComputedRef, type Ref } from "vue";
+
+interface SingleUserMediaStreamData {
+  stream: Ref<MediaStream | null | undefined>;
+  track:
+    | ComputedRef<MediaStreamTrack | null | undefined>
+    | Ref<MediaStreamTrack | null | undefined>;
+  start: (() => Promise<MediaStream | undefined>) | (() => void);
+  stop: () => void;
+}
 
 function useSingleUserMediaStream(
   type: "audio" | "video",
   isManual: boolean = false,
-) {
-  const micOrCamStr = type === "audio" ? "microphone" : "camera";
-  const mediaSettingsStore = useMediaSettingsStore();
+): ComputedRef<SingleUserMediaStreamData> {
+  const permissionsStore = usePermissionsStore();
+  const mediaStore = useMediaStore();
 
-  const selectedDevice = computed(
-    () => mediaSettingsStore.selectedDevices[micOrCamStr],
-  );
+  const fallback = useSingleUserMediaStreamFallback(type, true);
 
-  const constraints = computed(() => ({
-    [type]: {
-      deviceId: {
-        [selectedDevice.value === "default" ? "ideal" : "exact"]:
-          selectedDevice.value,
-      },
-    },
-  }));
+  const result = computed<SingleUserMediaStreamData>(() => {
+    let value: SingleUserMediaStreamData;
 
-  const { stream, start, stop } = useUserMedia({ constraints });
-  const track = computed(() => {
-    if (!stream.value) return null;
+    const storeRefs = storeToRefs(mediaStore);
+    const userMediaStreamValue: SingleUserMediaStreamData = {
+      stream: storeRefs.userMediaStream,
+      track:
+        type === "audio" ? storeRefs.userAudioTrack : storeRefs.userVideoTrack,
+      start: mediaStore.start,
+      stop: mediaStore.stop,
+    } as const;
 
-    const tracks =
-      type === "audio"
-        ? stream.value.getAudioTracks()
-        : stream.value.getVideoTracks();
+    const micOrCamStr = type === "audio" ? "microphone" : "camera";
+    const micsOrCamsStr = `${micOrCamStr}s` as const;
 
-    return tracks[0] || null;
+    const isGranted = permissionsStore[micOrCamStr] === "granted";
+    const areDevicesFetched = mediaStore[micsOrCamsStr].length !== 0;
+
+    if (mediaStore.hasStartedMedia && mediaStore.config[type]) {
+      value = userMediaStreamValue;
+
+      if (!isManual) {
+        userMediaStreamValue.start();
+        fallback.stop();
+      }
+    } else {
+      value = fallback;
+
+      if (!isManual && isGranted && areDevicesFetched) {
+        fallback.start();
+      }
+    }
+
+    return value;
   });
 
-  if (!isManual) {
-    const mediaStore = useMediaStore();
-    const permissionsStore = usePermissionsStore();
-
-    const micsOrCamsStr = `${micOrCamStr}s` as const;
-    const isGranted = computed(
-      () => permissionsStore[micOrCamStr] === "granted",
-    );
-
-    const areDevicesFetched = computed(
-      () => mediaStore[micsOrCamsStr].length !== 0,
-    );
-
-    watch(
-      [isGranted, areDevicesFetched],
-      () => {
-        if (isGranted.value && areDevicesFetched.value) {
-          start();
-        } else {
-          stop();
-        }
-      },
-      { immediate: true },
-    );
-
-    onUnmounted(() => {
-      stop();
-    });
-  }
-
-  return { stream, track, start, stop };
+  return result;
 }
 
 export default useSingleUserMediaStream;

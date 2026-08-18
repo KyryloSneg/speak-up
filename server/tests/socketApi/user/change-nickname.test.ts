@@ -111,10 +111,12 @@ describe(`${route} PATCH route (socket interactions)`, () => {
 
     firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: false, video: true },
     });
 
     fourthClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: true, video: false },
     });
 
     const firstCreateRoomRes = await firstCreateRoomPromise;
@@ -128,6 +130,7 @@ describe(`${route} PATCH route (socket interactions)`, () => {
 
     thirdClientSocket.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: true, video: true },
     });
 
     await thirdJoinRoomPromise;

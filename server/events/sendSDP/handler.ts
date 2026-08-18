@@ -66,6 +66,7 @@ async function sendSDPEventHandlerCb(
     userId: socket.data.userId,
     sdp: data.sdp,
     type: data.type,
+    screenSharingStreamId: data.screenSharingStreamId,
   });
 }
 

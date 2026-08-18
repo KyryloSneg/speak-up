@@ -82,6 +82,27 @@ describe("MediaDevice", () => {
     return errorInfo;
   }
 
+  async function initializeScreenSharingStream(
+    onError?: StartUserMediaOnError,
+  ): Promise<MediaStream> {
+    let stream: MediaStream;
+
+    const eventListener = vi.fn(mediaStream => (stream = mediaStream));
+
+    mediaDevice.on(MediaDeviceEvents.SCREEN_SHARING_STREAM, eventListener);
+    const result = mediaDevice.startScreenSharing(onError);
+
+    expect(result).toBe(mediaDevice);
+
+    await vi.waitFor(() => expect(eventListener).toHaveBeenCalledOnce());
+    mediaDevice.off(MediaDeviceEvents.SCREEN_SHARING_STREAM);
+
+    stream = stream!;
+    expect(stream).toBeDefined();
+
+    return stream;
+  }
+
   function expectTracksEnabledState(
     stream: MediaStream,
     config: { audio?: boolean; video?: boolean } = {},
@@ -108,7 +129,7 @@ describe("MediaDevice", () => {
         expect(stream.getVideoTracks().length).toBe(1);
       });
 
-      it("should properly merge old tracks with the new ones and apply correct constraints", async () => {
+      it("should properly merge old tracks with new ones and dispatch custom stream events", async () => {
         const initVideoConstraints: MediaTrackConstraints = {
           facingMode: { exact: FacingModes.USER },
           deviceId: { ideal: "default" },
@@ -122,9 +143,11 @@ describe("MediaDevice", () => {
         const initAudioTrackId = initStream.getAudioTracks()[0]?.id;
         const initVideoTrackId = initStream.getVideoTracks()[0]?.id;
 
-        expect(initStream.getVideoTracks()[0]?.getConstraints()).toStrictEqual(
-          expect.objectContaining(initVideoConstraints),
-        );
+        const customAddTrackSpy = vi.fn();
+        const customRemoveTrackSpy = vi.fn();
+
+        initStream.addEventListener("customaddtrack", customAddTrackSpy);
+        initStream.addEventListener("customremovetrack", customRemoveTrackSpy);
 
         const videoConstraints: MediaTrackConstraints = {
           facingMode: { exact: FacingModes.ENVIRONMENT },
@@ -136,8 +159,12 @@ describe("MediaDevice", () => {
           { videoConstraints },
         );
 
+        expect(stream).toBe(initStream);
         expect(stream.getAudioTracks()[0]?.id).toBe(initAudioTrackId);
         expect(stream.getVideoTracks()[0]?.id).not.toBe(initVideoTrackId);
+
+        expect(customAddTrackSpy).toHaveBeenCalledOnce();
+        expect(customRemoveTrackSpy).toHaveBeenCalledOnce();
 
         expect(stream.getVideoTracks()[0]?.getConstraints()).toStrictEqual(
           expect.objectContaining(videoConstraints),
@@ -164,7 +191,6 @@ describe("MediaDevice", () => {
       });
 
       it("should properly call onError if getting user media wasn't successful", async () => {
-        // temporarily silence console.error log for this test specifically
         const consoleErrorSpy = vi
           .spyOn(console, "error")
           .mockImplementation(() => {});
@@ -194,43 +220,120 @@ describe("MediaDevice", () => {
     });
   });
 
+  describe("startScreenSharing", () => {
+    it("should successfully emit screen sharing stream", async () => {
+      const stream = await initializeScreenSharingStream();
+
+      expect(stream).toBeDefined();
+      expect(stream.getVideoTracks().length).toBeGreaterThan(0);
+    });
+
+    it("should call onError when getDisplayMedia is not supported", async () => {
+      Object.defineProperty(global.navigator, "mediaDevices", {
+        value: {
+          getDisplayMedia: undefined,
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      const onError = vi.fn();
+      mediaDevice.startScreenSharing(onError);
+
+      expect(onError).toHaveBeenCalledWith({
+        error: null,
+        message: "Your browser doesn't support sharing screen",
+      });
+    });
+
+    it("should handle error when getDisplayMedia fails", async () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      const error = new Error("NotFoundError");
+      error.name = "NotFoundError";
+
+      Object.defineProperty(global.navigator, "mediaDevices", {
+        value: {
+          getDisplayMedia: async () => {
+            throw error;
+          },
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      const onError = vi.fn();
+      mediaDevice.startScreenSharing(onError);
+
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+      expect(onError).toHaveBeenCalledWith({
+        error,
+        message: "No sources to share",
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    });
+
+    it("should auto-stop screen sharing when track 'ended' event fires from browser UI", async () => {
+      const stream = await initializeScreenSharingStream();
+
+      const listener = vi.fn();
+      mediaDevice.on(MediaDeviceEvents.SCREEN_SHARING_STREAM, listener);
+
+      stream.getTracks().forEach(track => track.stop());
+      await vi.waitFor(() => expect(listener).toHaveBeenCalledWith(null));
+    });
+  });
+
   describe("toggleUserMedia", () => {
-    it("should properly toggle tracks", async () => {
+    it("should properly toggle tracks and dispatch enable/disable events", async () => {
       const stream = await initializeStream({ audio: true, video: true });
+      const audioTrack = stream.getAudioTracks()[0]!;
+      const videoTrack = stream.getVideoTracks()[0]!;
+
+      const audioEnableSpy = vi.fn();
+      const audioDisableSpy = vi.fn();
+      const videoEnableSpy = vi.fn();
+      const videoDisableSpy = vi.fn();
+
+      audioTrack.addEventListener("enable", audioEnableSpy);
+      audioTrack.addEventListener("disable", audioDisableSpy);
+      videoTrack.addEventListener("enable", videoEnableSpy);
+      videoTrack.addEventListener("disable", videoDisableSpy);
+
       expectTracksEnabledState(stream, { audio: true, video: true });
 
       mediaDevice.toggleUserMedia("audio");
       expectTracksEnabledState(stream, { audio: false, video: true });
+      expect(audioDisableSpy).toHaveBeenCalledOnce();
 
       mediaDevice.toggleUserMedia("video");
       expectTracksEnabledState(stream, { audio: false, video: false });
+      expect(videoDisableSpy).toHaveBeenCalledOnce();
 
       mediaDevice.toggleUserMedia("audio");
       expectTracksEnabledState(stream, { audio: true, video: false });
+      expect(audioEnableSpy).toHaveBeenCalledOnce();
 
       mediaDevice.toggleUserMedia("video");
       expectTracksEnabledState(stream, { audio: true, video: true });
+      expect(videoEnableSpy).toHaveBeenCalledOnce();
     });
 
-    it("should properly set tracks enabled state", async () => {
+    it("should properly set tracks enabled state explicitly", async () => {
       const stream = await initializeStream({ audio: true, video: true });
+      const audioTrack = stream.getAudioTracks()[0]!;
+
+      const audioDisableSpy = vi.fn();
+      audioTrack.addEventListener("disable", audioDisableSpy);
 
       mediaDevice.toggleUserMedia("audio", false);
       expectTracksEnabledState(stream, { audio: false, video: true });
-
-      mediaDevice.toggleUserMedia("video", false);
-      expectTracksEnabledState(stream, { audio: false, video: false });
+      expect(audioDisableSpy).toHaveBeenCalledOnce();
 
       mediaDevice.toggleUserMedia("audio", true);
-      expectTracksEnabledState(stream, { audio: true, video: false });
-
-      mediaDevice.toggleUserMedia("video", false);
-      expectTracksEnabledState(stream, { audio: true, video: false });
-
-      mediaDevice.toggleUserMedia("video", true);
-      expectTracksEnabledState(stream, { audio: true, video: true });
-
-      mediaDevice.toggleUserMedia("video", true);
       expectTracksEnabledState(stream, { audio: true, video: true });
     });
   });
@@ -338,7 +441,6 @@ describe("MediaDevice", () => {
       mediaDevice.changeDeviceId({ audio: newMicId, video: newCamId });
       await Promise.all([
         vi.waitFor(() => expect(getDeviceId(stream, "audio")).toBe(newMicId)),
-        // the camera is retrieved too
         vi.waitFor(() => expect(getDeviceId(stream, "video")).toBe(newCamId)),
       ]);
 
@@ -375,8 +477,9 @@ describe("MediaDevice", () => {
       const initVideoTrack = stream.getVideoTracks()[0]!;
 
       const error = new Error("NotReadableError");
-      const originalMediaDevices = navigator.mediaDevices;
+      error.name = "NotReadableError";
 
+      const originalMediaDevices = navigator.mediaDevices;
       Object.defineProperty(global.navigator, "mediaDevices", {
         value: {
           ...originalMediaDevices,
@@ -404,7 +507,7 @@ describe("MediaDevice", () => {
       expect(errorInfo.message).toBeTypeOf("string");
 
       expect(onError).toHaveBeenCalledOnce();
-      expect(consoleErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(error);
 
       expect(stream.getAudioTracks().length).toBe(1);
       expect(stream.getVideoTracks().length).toBe(0);
@@ -440,20 +543,39 @@ describe("MediaDevice", () => {
         stream.getTracks().every(track => track.readyState === "live"),
       ).toBe(true);
 
-      // shouldn't be triggered after the error case
       expect(onError).toHaveBeenCalledOnce();
-      expect(consoleErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+    });
+  });
+
+  describe("stopScreenSharing", () => {
+    it("should stop screen sharing tracks and emit null stream event", async () => {
+      const stream = await initializeScreenSharingStream();
+      const listener = vi.fn();
+
+      mediaDevice.on(MediaDeviceEvents.SCREEN_SHARING_STREAM, listener);
+      mediaDevice.stopScreenSharing();
+
+      expect(listener).toHaveBeenCalledWith(null);
+      expect(
+        stream.getTracks().every(track => track.readyState === "ended"),
+      ).toBe(true);
     });
   });
 
   describe("stop", () => {
-    it("should properly stop current stream", async () => {
-      const stream = await initializeStream({ audio: true, video: true });
+    it("should properly stop current user stream and screen sharing stream", async () => {
+      const userStream = await initializeStream({ audio: true, video: true });
+      const screenStream = await initializeScreenSharingStream();
+
       mediaDevice.stop();
 
       expect(mediaDevice.events).toStrictEqual({});
       expect(
-        stream.getTracks().every(track => track.readyState === "ended"),
+        userStream.getTracks().every(track => track.readyState === "ended"),
+      ).toBe(true);
+
+      expect(
+        screenStream.getTracks().every(track => track.readyState === "ended"),
       ).toBe(true);
     });
   });

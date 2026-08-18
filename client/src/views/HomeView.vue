@@ -8,6 +8,10 @@
       to: RoutesWithoutParams.CREATE_ROOM,
       variant: 'secondary',
     }"
+    :invisibleFocus="{
+      text: 'Go back to the header',
+      props: { selector: 'header' },
+    }"
     :submitButton="{
       text: 'Join',
       submit,
@@ -19,8 +23,13 @@
     :titleClass="styles.title"
     :actionClass="styles.action"
   >
-    <UIFieldGroup>
-      <FormField name="id" label="Room id" :autofocus="true" />
+    <UIFieldGroup :id="homeLayoutFieldGroupId">
+      <FormField
+        name="id"
+        label="Room id"
+        :preserveErrorSpace="true"
+        :autofocus="true"
+      />
     </UIFieldGroup>
   </FormCard>
 </template>
@@ -33,11 +42,13 @@ import { UIFieldGroup } from "@/components/ui/shadcn/field";
 import router from "@/router";
 import { useRoomStore } from "@/stores/room";
 import { RoutesWithoutParams } from "@/types/routes";
-import { getZodJoinRoomDataValidation } from "@speak-up/shared";
+import { homeLayoutFieldGroupId } from "@/utils/idConsts";
+import { getZodIdValidation } from "@speak-up/shared";
 import { toTypedSchema } from "@vee-validate/zod";
 import { useForm } from "vee-validate";
 import { computed, watch, watchEffect } from "vue";
 import { useRoute } from "vue-router";
+import z from "zod";
 
 const route = useRoute();
 const defaultId = computed(() => (route.params as { roomId?: string }).roomId);
@@ -48,7 +59,9 @@ const initialValues = computed(() => ({
 
 const roomStore = useRoomStore();
 const { handleSubmit, resetForm, isSubmitting, errors, meta } = useForm({
-  validationSchema: toTypedSchema(getZodJoinRoomDataValidation()),
+  validationSchema: toTypedSchema(
+    z.object({ id: getZodIdValidation() }).strict(),
+  ),
   initialValues: initialValues.value,
 });
 

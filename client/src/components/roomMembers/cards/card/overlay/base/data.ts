@@ -1,0 +1,1 @@
+export const ROOM_MEMBER_OVERLAY_SIDE_OFFSET = 12;

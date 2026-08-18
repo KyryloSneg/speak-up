@@ -1,5 +1,7 @@
+import $api from "@/http";
 import router from "@/router";
 import { useAuthStore } from "@/stores/auth";
+import { useRoomStore } from "@/stores/room";
 import { LocalStorageKeys } from "@/types/localStorage";
 import { RoutesWithoutParams } from "@/types/routes";
 import socket from "@/utils/socket";
@@ -7,17 +9,26 @@ import socket from "@/utils/socket";
 type RoutesWithoutParamsValues =
   (typeof RoutesWithoutParams)[keyof typeof RoutesWithoutParams];
 
-function handleLogout(isToRedirect?: true): void;
-function handleLogout(isToRedirect: false): RoutesWithoutParamsValues;
+async function handleLogout(isToRedirect?: true): Promise<void>;
+async function handleLogout(
+  isToRedirect: false,
+): Promise<RoutesWithoutParamsValues>;
 
-function handleLogout(
+async function handleLogout(
   isToRedirect: boolean = true,
-): void | RoutesWithoutParamsValues {
+): Promise<void | RoutesWithoutParamsValues> {
   const authStore = useAuthStore();
-  authStore.user = null;
+  const roomStore = useRoomStore();
 
-  socket.disconnect();
+  if (roomStore.room) roomStore.isToSupressLeaveConfirm = true;
+
   localStorage.removeItem(LocalStorageKeys.ACCESS_TOKEN);
+  await $api.auth.logout();
+
+  if (roomStore.room) roomStore.isToSupressLeaveConfirm = true;
+  socket.disconnect();
+
+  authStore.user = null;
 
   const nextRoute = RoutesWithoutParams.SIGN_IN;
   if (isToRedirect) {

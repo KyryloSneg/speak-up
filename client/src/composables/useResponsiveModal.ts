@@ -20,10 +20,11 @@ import {
   UIDrawerTitle,
   UIDrawerTrigger,
 } from "@/components/ui/shadcn/drawer";
+import { responsiveModalBreakpoint } from "@/utils/breakpointConsts";
 import { useMediaQuery } from "@vueuse/core";
 import { computed } from "vue";
 
-function useResponsiveModal(breakpoint: string = "40rem") {
+function useResponsiveModal(breakpoint: string = responsiveModalBreakpoint) {
   const isDesktop = useMediaQuery(`(min-width: ${breakpoint})`);
   const ResponsiveModal = computed(() => ({
     Root: isDesktop.value ? UIDialog : UIDrawer,

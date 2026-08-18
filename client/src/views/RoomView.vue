@@ -1,7 +1,69 @@
 <template>
-  <div></div>
+  <header :class="styles.header">
+    <h1 class="sr-only">{{ APP_NAME }}</h1>
+    <UIInvisibleFocus selector="main">
+      Skip to the main content
+    </UIInvisibleFocus>
+    <RoomIdSpoiler />
+    <AppHeaderActions />
+  </header>
+  <main
+    :class="styles.main"
+    :data-window-open="
+      isOpenedWindow ? roomStore.openedWindow !== null : undefined
+    "
+    @scroll="scroll"
+  >
+    <UIInvisibleFocus selector="header" class="top-4 left-4">
+      Go back to the header
+    </UIInvisibleFocus>
+    <UIInvisibleFocus
+      selector="footer"
+      :isAutoFocusable="true"
+      class="top-4 left-4"
+    >
+      Skip to the actions
+    </UIInvisibleFocus>
+    <RoomMemberCards />
+    <RoomWindow />
+  </main>
+  <footer :class="styles.footer">
+    <UIInvisibleFocus
+      selector='main *:not([data-invisible-focus="true"])'
+      class="bottom-full"
+    >
+      Go back to the main content
+    </UIInvisibleFocus>
+    <RoomActions />
+  </footer>
+  <MemberAnnouncer />
+  <SharingScreenAnnouncer />
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import MemberAnnouncer from "@/components/announcers/member/MemberAnnouncer.vue";
+import SharingScreenAnnouncer from "@/components/announcers/sharingScreen/SharingScreenAnnouncer.vue";
+import AppHeaderActions from "@/components/appHeader/actions/AppHeaderActions.vue";
+import RoomActions from "@/components/roomActions/RoomActions.vue";
+import RoomIdSpoiler from "@/components/roomIdSpoiler/RoomIdSpoiler.vue";
+import RoomMemberCards from "@/components/roomMembers/cards/RoomMemberCards.vue";
+import RoomWindow from "@/components/roomWindow/RoomWindow.vue";
+import UIInvisibleFocus from "@/components/ui/custom/invisible-focus/UIInvisibleFocus.vue";
+import useIsRoomOpenedWindow from "@/composables/useIsRoomOpenedWindow";
+import { useRoomStore } from "@/stores/room";
+import { APP_NAME } from "@speak-up/shared";
+import * as styles from "./RoomView.css";
 
-<style scoped></style>
+const roomStore = useRoomStore();
+const isOpenedWindow = useIsRoomOpenedWindow();
+
+const scroll = (e: Event) => {
+  // if user tries, for example, to fill ChatInput mid-transition, browser
+  // forces undesired "main" element scroll (scroll into the view of the textarea caret),
+  // so prevent the scroll via this event handler
+  const target = e.target as HTMLElement;
+
+  target.scrollLeft = 0;
+  target.scrollTop = 0;
+};
+</script>

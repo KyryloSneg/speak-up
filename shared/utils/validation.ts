@@ -76,29 +76,34 @@ export function getZodRoomMaxMembersValidation() {
   const invalidTypeError = "Invalid max members" as const;
 
   return z
-    .union(
-      [
-        z.number(),
-        z
-          .string()
-          .trim()
-          .transform(value => {
-            const parsed = Number(value);
-            if (isNaN(parsed) || !value) {
-              throw new Error(invalidTypeError);
-            }
+    .unknown()
+    .transform((value, ctx) => {
+      if (typeof value === "number") return value;
+      if (typeof value === "string") {
+        const trimmed = value.trim();
 
-            return parsed;
-          }),
-      ],
-      invalidTypeError,
-    )
-    .pipe(
-      z
-        .number(invalidTypeError)
-        .min(1, "Too few members")
-        .max(100, "Too many members"),
-    );
+        if (!trimmed || isNaN(Number(trimmed))) {
+          ctx.addIssue({
+            code: "custom",
+            message: invalidTypeError,
+            fatal: true,
+          });
+
+          return z.NEVER;
+        }
+
+        return Number(trimmed);
+      }
+
+      ctx.addIssue({
+        code: "custom",
+        message: invalidTypeError,
+        fatal: true,
+      });
+
+      return z.NEVER;
+    })
+    .pipe(z.number().min(1, "Too few members").max(100, "Too many members"));
 }
 
 export function getZodMediaConfigValidation() {
@@ -156,11 +161,21 @@ export function getZodChangeNicknameBodyValidation() {
 // socket events
 
 export function getZodCreateRoomDataValidation() {
-  return z.object({ maxMembers: getZodRoomMaxMembersValidation() }).strict();
+  return z
+    .object({
+      maxMembers: getZodRoomMaxMembersValidation(),
+      mediaConfig: getZodMediaConfigValidation(),
+    })
+    .strict();
 }
 
 export function getZodJoinRoomDataValidation() {
-  return z.object({ id: getZodIdValidation() }).strict();
+  return z
+    .object({
+      id: getZodIdValidation(),
+      mediaConfig: getZodMediaConfigValidation(),
+    })
+    .strict();
 }
 
 export function getZodSendMediaConfigDataValidation() {
@@ -182,6 +197,7 @@ export function getZodSendSDPDataValidation() {
       userId: getZodIdValidation(),
       sdp: z.string(),
       type: z.union([z.literal("offer"), z.literal("answer")]),
+      screenSharingStreamId: z.string().nullable().optional(),
     })
     .strict();
 }
@@ -191,7 +207,14 @@ export function getZodRemoveUserDataValidation() {
 }
 
 export function getZodSendMessageDataValidation() {
-  return z.object({ content: getZodMessageContentValidation() }).strict();
+  return z.array(
+    z
+      .object({
+        tempId: getZodIdValidation(),
+        content: getZodMessageContentValidation(),
+      })
+      .strict(),
+  );
 }
 
 // utils

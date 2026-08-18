@@ -4,12 +4,13 @@ import {
   MediaDeviceEvents,
   type MediaDeviceEventNames,
 } from "@/types/mediaDeviceEvents";
-import {
-  DEFAULT_AUDIO_CONSTRAINTS,
-  DEFAULT_VIDEO_CONSTRAINTS,
-} from "@/utils/consts";
 import getMediaTrackDeviceId from "@/utils/getMediaTrackDeviceId";
 import inverseFacingMode from "@/utils/inverseFacingMode";
+import {
+  DEFAULT_AUDIO_CONSTRAINTS,
+  DEFAULT_SCREEN_SHARING_CONSTRAINTS,
+  DEFAULT_VIDEO_CONSTRAINTS,
+} from "@/utils/mediaConsts";
 import _ from "lodash";
 
 export type StartUserMediaOnError = (info: {
@@ -31,14 +32,89 @@ export const defaultStartUserMediaOptions: StartUserMediaOptions = {
 class MediaDevice extends Emitter<MediaDeviceEventNames> {
   protected userMediaStream: MediaStream | null;
   protected prevUserMediaStreamId: string | null;
-  protected latestMediaStreamId: string | null;
+  protected latestUserMediaStreamId: string | null;
+
+  protected screenSharingStream: MediaStream | null;
+  protected prevScreenSharingStreamId: string | null;
+  protected latestScreenSharingStreamId: string | null;
 
   constructor() {
     super();
 
     this.userMediaStream = null;
     this.prevUserMediaStreamId = null;
-    this.latestMediaStreamId = null;
+    this.latestUserMediaStreamId = null;
+
+    this.screenSharingStream = null;
+    this.prevScreenSharingStreamId = null;
+    this.latestScreenSharingStreamId = null;
+  }
+
+  private addTrack(
+    stream: MediaStream | null | undefined,
+    track: MediaStreamTrack,
+  ): void {
+    if (!stream) return;
+
+    stream.addTrack(track);
+    stream.dispatchEvent(new CustomEvent("customaddtrack"));
+  }
+
+  private removeTrack(
+    stream: MediaStream | null | undefined,
+    track: MediaStreamTrack,
+  ): void {
+    if (!stream) return;
+
+    stream.removeTrack(track);
+    stream.dispatchEvent(new CustomEvent("customremovetrack"));
+  }
+
+  private onStream(
+    stream: MediaStream,
+    type: "userMedia" | "screenSharing",
+  ): void {
+    const streamField =
+      type === "userMedia" ? "userMediaStream" : "screenSharingStream";
+
+    const prevStreamIdField =
+      type === "userMedia"
+        ? "prevUserMediaStreamId"
+        : "prevScreenSharingStreamId";
+
+    const latestStreamIdField =
+      type === "userMedia"
+        ? "latestUserMediaStreamId"
+        : "latestScreenSharingStreamId";
+
+    const streamEvent =
+      type === "userMedia"
+        ? MediaDeviceEvents.USER_MEDIA_STREAM
+        : MediaDeviceEvents.SCREEN_SHARING_STREAM;
+
+    // if we have already created a media stream, replace its TRACKS with new ones,
+    // not the STREAM itself (because otherwise there will be no video and audio for a moment)
+    if (this[streamField]) {
+      this[prevStreamIdField] = this[latestStreamIdField];
+
+      const oldTracks = [...this[streamField].getTracks()];
+      const newTracks = stream.getTracks();
+
+      newTracks.forEach(track => this.addTrack(this[streamField], track));
+      const newKinds = new Set(newTracks.map(track => track?.kind));
+
+      oldTracks.forEach(track => {
+        if (newKinds.has(track?.kind)) {
+          track.stop();
+          this.removeTrack(this[streamField], track);
+        }
+      });
+    } else {
+      this[streamField] = stream;
+    }
+
+    this[latestStreamIdField] = stream.id;
+    this.emit(streamEvent, this[streamField]);
   }
 
   startUserMedia(
@@ -88,32 +164,6 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
         video: config.video ? optionsToUse.videoConstraints! : false,
       };
 
-      const onStream: (stream: MediaStream) => void = stream => {
-        // if we have already created a media stream, replace its TRACKS with new ones,
-        // not the STREAM itself (because otherwise there will be no video and audio for a moment)
-        if (this.userMediaStream) {
-          this.prevUserMediaStreamId = this.latestMediaStreamId;
-
-          const oldTracks = [...this.userMediaStream.getTracks()];
-          const newTracks = stream.getTracks();
-
-          newTracks.forEach(track => this.userMediaStream?.addTrack(track));
-          const newKinds = new Set(newTracks.map(track => track?.kind));
-
-          oldTracks.forEach(track => {
-            if (newKinds.has(track?.kind)) {
-              track.stop();
-              this.userMediaStream?.removeTrack(track);
-            }
-          });
-        } else {
-          this.userMediaStream = stream;
-        }
-
-        this.latestMediaStreamId = stream.id;
-        this.emit(MediaDeviceEvents.USER_MEDIA_STREAM, this.userMediaStream);
-      };
-
       const onOldDevicesCleanup: () => void = () => {
         if (this.userMediaStream) {
           if (configToUse.audio) {
@@ -127,7 +177,7 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
             if (!oldConstraints || newDeviceId !== oldDeviceId) {
               this.userMediaStream.getAudioTracks().forEach(track => {
                 track.stop();
-                this.userMediaStream?.removeTrack(track);
+                this.removeTrack(this.userMediaStream, track);
               });
             }
           }
@@ -143,7 +193,7 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
             if (!oldConstraints || newDeviceId !== oldDeviceId) {
               this.userMediaStream.getVideoTracks().forEach(track => {
                 track.stop();
-                this.userMediaStream?.removeTrack(track);
+                this.removeTrack(this.userMediaStream, track);
               });
             }
           }
@@ -158,7 +208,7 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
             error,
             message: "Audio or video is not found",
           });
-        } else if (error.name == "NotAllowedError") {
+        } else if (error.name === "NotAllowedError") {
           optionsToUse?.onError?.({
             error,
             message: "You have not allowed using camera or microphone",
@@ -171,6 +221,10 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
         }
 
         console.error(error);
+      };
+
+      const onStream = (stream: MediaStream) => {
+        this.onStream(stream, "userMedia");
       };
 
       navigator.mediaDevices
@@ -196,6 +250,63 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
     return this;
   }
 
+  startScreenSharing(
+    onError: StartUserMediaOnError | null = null,
+  ): MediaDevice {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      onError?.({
+        error: null,
+        message: "Your browser doesn't support sharing screen",
+      });
+
+      return this;
+    }
+
+    const config: MediaStreamConstraints = DEFAULT_SCREEN_SHARING_CONSTRAINTS;
+
+    const baseOnCatch: (error: Error) => void = error => {
+      if (error.name === "NotAllowedError") return;
+      if (error.name === "NotFoundError") {
+        onError?.({
+          error,
+          message: "No sources to share",
+        });
+      } else {
+        onError?.({
+          error,
+          message: "Something has gone terribly wrong",
+        });
+      }
+
+      console.error(error);
+    };
+
+    const onStream = (stream: MediaStream) => {
+      this.onStream(stream, "screenSharing");
+
+      // handle "stop sharing screen" button from the browser interface
+      const cleanupCb = (): void => {
+        // .active property of the stream isn't updated by this moment yet
+        const isActive = !!this.screenSharingStream
+          ?.getTracks()
+          .some(track => track.readyState !== "ended");
+
+        if (!isActive) this.stopScreenSharing();
+      };
+
+      this.screenSharingStream
+        ?.getTracks()
+        .forEach(track => track.addEventListener("ended", cleanupCb));
+    };
+
+    navigator.mediaDevices
+      .getDisplayMedia(config)
+      .then(onStream)
+      .catch(baseOnCatch);
+
+    return this;
+  }
+
   toggleUserMedia(
     type: "audio" | "video",
     value: boolean | null = null,
@@ -203,6 +314,9 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
     if (this.userMediaStream) {
       function trackCb(track: MediaStreamTrack): void {
         track.enabled = typeof value === "boolean" ? value : !track.enabled;
+        track.dispatchEvent(
+          new CustomEvent(track.enabled ? "enable" : "disable"),
+        );
       }
 
       const tracks =
@@ -294,10 +408,27 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
     return this;
   }
 
+  stopScreenSharing(): MediaDevice {
+    this.screenSharingStream?.getTracks().forEach(t => {
+      t.stop();
+    });
+
+    this.screenSharingStream = null;
+    this.emit(
+      MediaDeviceEvents.SCREEN_SHARING_STREAM,
+      this.screenSharingStream,
+    );
+
+    return this;
+  }
+
   stop(): MediaDevice {
+    this.stopScreenSharing();
     this.userMediaStream?.getTracks().forEach(track => {
       track.stop();
     });
+
+    // do not notify about userMediaStream stop
 
     // detaching all event handlers
     this.off();

@@ -42,10 +42,10 @@ describe("socketStore", () => {
   });
 
   describe("bindEvents", () => {
-    describe("connect error event", () => {
+    describe("connect_error event", () => {
       describe("auth error", () => {
-        it("should properly handle an auth error with a silent refresh of tokens", async () => {
-          const accessToken = "accessToken" as const;
+        it("should properly handle an auth error with a silent refresh of tokens and reconnect", async () => {
+          const accessToken = "newAccessToken";
           vi.mocked($api.auth.refresh).mockResolvedValueOnce({
             data: { tokens: { accessToken } },
           } as Awaited<ReturnType<typeof $api.auth.refresh>>);
@@ -65,10 +65,10 @@ describe("socketStore", () => {
             accessToken,
           );
 
-          expect(connectToSocketAndBindToAllEvents).toHaveBeenCalled();
+          expect(connectToSocketAndBindToAllEvents).toHaveBeenCalledOnce();
         });
 
-        it("should properly handle an auth error with seamless logout", async () => {
+        it("should trigger handleLogout if silent token refresh returns null", async () => {
           vi.mocked($api.auth.refresh).mockResolvedValueOnce({
             data: null,
           } as Awaited<ReturnType<typeof $api.auth.refresh>>);
@@ -85,13 +85,12 @@ describe("socketStore", () => {
 
           expect(toast.error).not.toHaveBeenCalled();
           expect(connectToSocketAndBindToAllEvents).not.toHaveBeenCalled();
-
-          expect(handleLogout).toHaveBeenCalled();
+          expect(handleLogout).toHaveBeenCalledOnce();
         });
       });
 
-      describe("arbitrary error", () => {
-        it("should properly handle an arbitrary error", async () => {
+      describe("non-auth error", () => {
+        it("should show toast error and not attempt token refresh when no auth error code is provided", async () => {
           const socketStore = useSocketStore();
 
           socketStore.bindEvents();
@@ -101,11 +100,14 @@ describe("socketStore", () => {
             message: "Unexpected Error",
           });
 
-          expect(toast.error).toHaveBeenCalledOnce();
+          expect(toast.error).toHaveBeenCalledExactlyOnceWith(
+            "Failed to connect to socket. Some functions might not work correctly.",
+          );
+
           expect($api.auth.refresh).not.toHaveBeenCalled();
         });
 
-        it("should properly handle an arbitrary error with non-auth code", async () => {
+        it("should show toast error when error code does not match SocketAuthConnectionErrorCode", async () => {
           const socketStore = useSocketStore();
 
           socketStore.bindEvents();
@@ -113,21 +115,86 @@ describe("socketStore", () => {
 
           await mockSocket.triggerServerEvent(SocketEvents.CONNECT_ERROR, {
             message: "Unexpected Error",
-            data: { code: SocketAuthConnectionErrorCode + "arbitrary" },
+            data: { code: "OTHER_ERROR_CODE" },
           });
 
-          expect(toast.error).toHaveBeenCalledOnce();
+          expect(toast.error).toHaveBeenCalledExactlyOnceWith(
+            "Failed to connect to socket. Some functions might not work correctly.",
+          );
+
           expect($api.auth.refresh).not.toHaveBeenCalled();
         });
+      });
+    });
+
+    describe("disconnect event", () => {
+      it("should attempt token refresh and reconnect if user is authenticated", async () => {
+        const authStore = useAuthStore();
+        authStore.user = { id: "user-1" } as unknown as UserDto;
+
+        const accessToken = "refreshedAccessToken";
+        vi.mocked($api.auth.refresh).mockResolvedValueOnce({
+          data: { tokens: { accessToken } },
+        } as Awaited<ReturnType<typeof $api.auth.refresh>>);
+
+        const socketStore = useSocketStore();
+
+        socketStore.bindEvents();
+        socketStore.bindEvents();
+
+        await mockSocket.triggerServerEvent(SocketEvents.DISCONNECT, null);
+
+        expect($api.auth.refresh).toHaveBeenCalledOnce();
+        expect(localStorage.getItem(LocalStorageKeys.ACCESS_TOKEN)).toBe(
+          accessToken,
+        );
+
+        expect(connectToSocketAndBindToAllEvents).toHaveBeenCalledOnce();
+      });
+
+      it("should call handleLogout on disconnect if authenticated but token refresh returns null", async () => {
+        const authStore = useAuthStore();
+        authStore.user = { id: "user-1" } as unknown as UserDto;
+
+        vi.mocked($api.auth.refresh).mockResolvedValueOnce({
+          data: null,
+        } as Awaited<ReturnType<typeof $api.auth.refresh>>);
+
+        const socketStore = useSocketStore();
+
+        socketStore.bindEvents();
+        socketStore.bindEvents();
+
+        await mockSocket.triggerServerEvent(SocketEvents.DISCONNECT, null);
+
+        expect($api.auth.refresh).toHaveBeenCalledOnce();
+        expect(handleLogout).toHaveBeenCalledOnce();
+        expect(connectToSocketAndBindToAllEvents).not.toHaveBeenCalled();
+      });
+
+      it("should do nothing on disconnect if user is unauthenticated", async () => {
+        const authStore = useAuthStore();
+        authStore.user = null;
+
+        const socketStore = useSocketStore();
+
+        socketStore.bindEvents();
+        socketStore.bindEvents();
+
+        await mockSocket.triggerServerEvent(SocketEvents.DISCONNECT, null);
+
+        expect($api.auth.refresh).not.toHaveBeenCalled();
+        expect(connectToSocketAndBindToAllEvents).not.toHaveBeenCalled();
+        expect(handleLogout).not.toHaveBeenCalled();
       });
     });
   });
 
   describe("connect", () => {
-    describe("success", () => {
-      it("should properly connect socket if user is authenticated and the connection hasn't started yet", () => {
+    describe("when authenticated", () => {
+      it("should connect socket if user is authenticated and socket is not connected", () => {
         const authStore = useAuthStore();
-        authStore.user = { id: "id" } as unknown as UserDto;
+        authStore.user = { id: "user-1" } as unknown as UserDto;
 
         const socketStore = useSocketStore();
         socketStore.connect();
@@ -135,11 +202,11 @@ describe("socketStore", () => {
         expect(connectToSocketAndBindToAllEvents).toHaveBeenCalledOnce();
       });
 
-      it("should do nothing if user is authenticated and the connection is already established", () => {
+      it("should do nothing if user is authenticated and socket is already connected", () => {
         mockSocket.connected = true;
 
         const authStore = useAuthStore();
-        authStore.user = { id: "id" } as unknown as UserDto;
+        authStore.user = { id: "user-1" } as unknown as UserDto;
 
         const socketStore = useSocketStore();
         socketStore.connect();
@@ -149,8 +216,8 @@ describe("socketStore", () => {
       });
     });
 
-    describe("failure", () => {
-      it("should do nothing if user is unauthenticated and the connection hasn't started yet", () => {
+    describe("when unauthenticated", () => {
+      it("should do nothing if user is unauthenticated and socket is not connected", () => {
         const socketStore = useSocketStore();
         socketStore.connect();
 
@@ -158,7 +225,7 @@ describe("socketStore", () => {
         expect(connectToSocketAndBindToAllEvents).not.toHaveBeenCalled();
       });
 
-      it("should properly disconnect socket if user is unauthenticated and the connection is established", () => {
+      it("should disconnect socket if user is unauthenticated and socket is connected", () => {
         mockSocket.connected = true;
 
         const socketStore = useSocketStore();

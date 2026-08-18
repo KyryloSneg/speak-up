@@ -9,10 +9,11 @@ const {
   mockSyncPermissionsWithMediaConfig,
   mockSyncSelectedDevicesWithUserMedia,
   mockSyncStreamIsCameraFlipped,
+  mockSyncStoreUserTrack,
   mockSendingNewMediaConfig,
+  mockSendingWebRTCUserMedia,
   mockStoppingUserMediaOnPermissionsDeny,
   mockStoreUserMediaStreamCleanup,
-  mockStoreUserAudioTrackCleanup,
 } = vi.hoisted(() => ({
   mockGettingMediaPermissions: vi.fn(),
   mockGettingAllMediaDevices: vi.fn(),
@@ -21,10 +22,11 @@ const {
   mockSyncPermissionsWithMediaConfig: vi.fn(),
   mockSyncSelectedDevicesWithUserMedia: vi.fn(),
   mockSyncStreamIsCameraFlipped: vi.fn(),
+  mockSyncStoreUserTrack: vi.fn(),
   mockSendingNewMediaConfig: vi.fn(),
+  mockSendingWebRTCUserMedia: vi.fn(),
   mockStoppingUserMediaOnPermissionsDeny: vi.fn(),
   mockStoreUserMediaStreamCleanup: vi.fn(),
-  mockStoreUserAudioTrackCleanup: vi.fn(),
 }));
 
 vi.mock("@/composables/useGettingAllMediaDevices", () => ({
@@ -43,12 +45,16 @@ vi.mock("@/composables/useSendingNewMediaConfig", () => ({
   default: mockSendingNewMediaConfig,
 }));
 
+vi.mock("@/composables/useSendingWebRTCUserMedia", () => ({
+  default: mockSendingWebRTCUserMedia,
+}));
+
 vi.mock("@/composables/useStoppingUserMediaOnPermissionsDeny", () => ({
   default: mockStoppingUserMediaOnPermissionsDeny,
 }));
 
-vi.mock("@/composables/useStoreUserAudioTrackCleanup", () => ({
-  default: mockStoreUserAudioTrackCleanup,
+vi.mock("@/composables/useSyncStoreUserTrack", () => ({
+  default: mockSyncStoreUserTrack,
 }));
 
 vi.mock("@/composables/useStoreUserMediaStreamCleanup", () => ({
@@ -87,8 +93,12 @@ describe("useMediaDevicesInitialization", () => {
     expect(mockSyncSelectedDevicesWithUserMedia).toHaveBeenCalledOnce();
     expect(mockSyncStreamIsCameraFlipped).toHaveBeenCalledOnce();
     expect(mockSendingNewMediaConfig).toHaveBeenCalledOnce();
+    expect(mockSendingWebRTCUserMedia).toHaveBeenCalledOnce();
     expect(mockStoppingUserMediaOnPermissionsDeny).toHaveBeenCalledOnce();
     expect(mockStoreUserMediaStreamCleanup).toHaveBeenCalledOnce();
-    expect(mockStoreUserAudioTrackCleanup).toHaveBeenCalledOnce();
+
+    expect(mockSyncStoreUserTrack).toHaveBeenCalledTimes(2);
+    expect(mockSyncStoreUserTrack).toHaveBeenCalledWith("audio");
+    expect(mockSyncStoreUserTrack).toHaveBeenCalledWith("video");
   });
 });

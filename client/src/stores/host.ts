@@ -1,10 +1,17 @@
 import socket from "@/utils/socket";
-import { SocketEvents, SocketResponseEvents } from "@speak-up/shared";
+import {
+  SocketEvents,
+  SocketResponseEvents,
+  type UserDto,
+} from "@speak-up/shared";
 import { defineStore } from "pinia";
+import { ref } from "vue";
 import { toast } from "vue-sonner";
 
 // host-only actions
 export const useHostStore = defineStore("host", () => {
+  const userIdsToRemove = ref<UserDto["id"][]>([]);
+
   function bindEvents(): void {
     socket
       .off(SocketResponseEvents.REMOVE_USER)
@@ -12,8 +19,11 @@ export const useHostStore = defineStore("host", () => {
   }
 
   function removeUser(userId: string): void {
+    if (userIdsToRemove.value.includes(userId)) return;
+
     socket.emit(SocketEvents.REMOVE_USER, { userId });
+    userIdsToRemove.value.push(userId);
   }
 
-  return { bindEvents, removeUser };
+  return { userIdsToRemove, bindEvents, removeUser };
 });

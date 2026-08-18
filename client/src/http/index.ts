@@ -146,13 +146,13 @@ authApiInstance.interceptors.response.use(
       originalRequest &&
       !originalRequest._retry
     ) {
-      if (originalRequest.url?.includes(ApiRoutes.REFRESH)) {
-        handleLogout();
-        return Promise.reject(error);
-      }
-
       // saves us from the infinite loop of retries
       originalRequest._retry = true;
+
+      if (originalRequest.url?.includes(ApiRoutes.REFRESH)) {
+        await handleLogout();
+        return Promise.reject(error);
+      }
 
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -174,7 +174,7 @@ authApiInstance.interceptors.response.use(
         isRefreshing = false;
 
         processQueue(refreshResponse.originalError, null);
-        handleLogout();
+        await handleLogout();
 
         return Promise.reject(refreshResponse.originalError);
       }

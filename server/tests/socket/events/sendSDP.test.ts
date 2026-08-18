@@ -5,7 +5,7 @@ import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
 import testPrivateEvent from "#tests/socket/utils/testPrivateEvent.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
-import waitAfterEmit from "#tests/socket/utilsTests/waitAfterEmit.ts";
+import waitAfterEmit from "#tests/socket/utils/waitAfterEmit.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
@@ -38,14 +38,16 @@ describe("sendSDP event", () => {
   function getValidDataObj(
     userId: string,
     type: "offer" | "answer",
+    screenSharingStreamId?: SendSDPData["screenSharingStreamId"],
   ): SendSDPData {
-    return { userId, sdp: "sdp", type };
+    return { userId, sdp: "sdp", type, screenSharingStreamId };
   }
 
   const invalidDataObj: SendSDPData = {
     userId: 0e1 as unknown as string,
     sdp: "sdp",
     type: "offerAndAnswer" as unknown as "offer" | "answer",
+    screenSharingStreamId: 0e1 as unknown as string,
   };
 
   testPrivateEvent(() => testKit, SocketEvents.SEND_SDP);
@@ -136,10 +138,12 @@ describe("sendSDP event", () => {
 
     firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     fourthClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     const firstCreateRoomRes = await firstCreateRoomPromise;
@@ -156,6 +160,7 @@ describe("sendSDP event", () => {
 
       thirdClientSocket.emit(SocketEvents.JOIN_ROOM, {
         id: firstRoom,
+        mediaConfig: { audio: true, video: true },
       });
 
       await thirdJoinRoomPromise;
@@ -182,6 +187,7 @@ describe("sendSDP event", () => {
 
   async function testSuccessfulSendSDP(
     type: "offer" | "answer",
+    isWithScreenSharing: boolean = false,
   ): Promise<void> {
     const { firstRoom, secRoom, users, clientSockets, serverSockets } =
       await setupSockets();
@@ -206,7 +212,13 @@ describe("sendSDP event", () => {
       fourthReceivedSDPPresence = true;
     });
 
-    const dataObj = getValidDataObj(users.sec.id, type);
+    const screenSharingStreamId = "screenSharingStreamId";
+    const dataObj = getValidDataObj(
+      users.sec.id,
+      type,
+      isWithScreenSharing ? screenSharingStreamId : undefined,
+    );
+
     clientSockets.first.emit(SocketEvents.SEND_SDP, dataObj);
 
     await waitAfterEmit();
@@ -216,6 +228,7 @@ describe("sendSDP event", () => {
       userId: users.first.id,
       sdp: dataObj.sdp,
       type: dataObj.type,
+      ...(isWithScreenSharing ? { screenSharingStreamId } : {}),
     });
 
     expect(firstReceivedSDPPresence).toBe(false);

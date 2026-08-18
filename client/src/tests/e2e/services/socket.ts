@@ -68,39 +68,41 @@ export const defaultMockIoResponses: Partial<SocketServerToClientEventsData> = {
       picture: "thirdPicture",
       letterPicture: "thirdLetterPicture",
     },
+    mediaConfig: { audio: true, video: true },
   },
   [SocketEvents.USER_LEFT]: { userId: "secId" },
   [SocketEvents.LEFT_ROOM]: { id: mockRoomId },
   [SocketEvents.RECEIVED_MEDIA_CONFIG]: {
-    userId: "firstId",
+    userId: mockUser.id,
     config: { audio: true, video: true },
   },
   [SocketEvents.RECEIVED_SDP]: {
-    userId: "firstId",
+    userId: mockUser.id,
     sdp: "sdp",
     type: "answer",
   },
   [SocketEvents.RECEIVED_ICE]: {
-    userId: "firstId",
+    userId: mockUser.id,
     ice: { candidate: "candidate", sdpMid: "sdpMid", sdpMLineIndex: 0 },
   },
   [SocketEvents.RECEIVED_MESSAGE]: {
     message: {
       id: "newFirstId",
-      userId: "firstId",
-      content: [{ type: "text", value: "new firstId msg" }],
+      tempId: "temp-newFirstId",
+      userId: "secId",
+      user: {
+        nickname: "sec nickname",
+        picture: "secPicture",
+      },
+      content: [{ type: "text", value: "new secId msg" }],
+      createdAt: new Date().toISOString(),
     },
   },
   [SocketResponseEvents.CREATE_ROOM]: { id: mockRoomId },
   [SocketResponseEvents.JOIN_ROOM]: {
+    hostId: mockUser.id,
     users: [
-      {
-        id: "firstId",
-        username: "firstUsername",
-        nickname: "first nickname",
-        picture: "firstPicture",
-        letterPicture: "firstLetterPicture",
-      },
+      mockUser,
       {
         id: "secId",
         username: "secUsername",
@@ -112,19 +114,34 @@ export const defaultMockIoResponses: Partial<SocketServerToClientEventsData> = {
     messages: [
       {
         id: "id",
-        userId: "firstId",
+        userId: mockUser.id,
+        user: {
+          nickname: mockUser.nickname,
+          picture: mockUser.picture,
+        },
         content: [
           { type: "text", value: "value" },
           { type: "text", value: "smth" },
         ],
+        createdAt: new Date().toISOString(),
       },
     ],
+    maxMembers: 10,
+    mediaConfigs: {
+      [mockUser.id]: { audio: true, video: false },
+      secId: { audio: false, video: true },
+    },
   },
   [SocketResponseEvents.SEND_MESSAGE]: {
     message: {
       id: "newId",
       userId: mockUser.id,
+      user: {
+        nickname: mockUser.nickname,
+        picture: mockUser.picture,
+      },
       content: [{ type: "text", value: "new msg" }],
+      createdAt: new Date().toISOString(),
     },
   },
 } as const;

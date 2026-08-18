@@ -55,6 +55,14 @@ describe("roomMaxMembersValidator", () => {
       expect(message).toBe("Invalid max members");
     });
 
+    it("should fail if an empty string is passed", () => {
+      const maxMembers = "";
+      const [isValid, message] = validate(maxMembers);
+
+      expect(isValid).toBe(false);
+      expect(message).toBe("Invalid max members");
+    });
+
     describe("length boundaries", () => {
       it("should fail if maxMembers is 0", () => {
         const maxMembers = 0;

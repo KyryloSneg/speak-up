@@ -7,7 +7,7 @@ import setupSocketTests from "#tests/socket/utils/setupSocketTests.ts";
 import testPrivateEvent from "#tests/socket/utils/testPrivateEvent.ts";
 import waitFor from "#tests/socket/utils/waitFor.ts";
 import waitForClientSocketsConnect from "#tests/socket/utils/waitForClientSocketsConnect.ts";
-import waitAfterEmit from "#tests/socket/utilsTests/waitAfterEmit.ts";
+import waitAfterEmit from "#tests/socket/utils/waitAfterEmit.ts";
 import createAuthUser from "#tests/utils/createAuthUser.ts";
 import getUniqueMockUserWithoutId from "#tests/utils/getUniqueMockUserWithoutId.ts";
 import setupDbCleanup from "#tests/utils/setupDb.ts";
@@ -98,10 +98,12 @@ describe("joinRoom event", () => {
 
     firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: areRoomsForSingleUser ? 1 : 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     thirdClientSocket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers: areRoomsForSingleUser ? 1 : 10,
+      mediaConfig: { audio: true, video: true },
     });
 
     const [firstRoom, secRoom] = (
@@ -113,9 +115,12 @@ describe("joinRoom event", () => {
       SocketResponseEvents.SEND_MESSAGE,
     );
 
-    firstClientSocket.emit(SocketEvents.SEND_MESSAGE, {
-      content: [{ type: "text", value: "value" }],
-    });
+    firstClientSocket.emit(SocketEvents.SEND_MESSAGE, [
+      {
+        tempId: "tempId",
+        content: [{ type: "text", value: "value" }],
+      },
+    ]);
 
     await sendMessagePromise;
 
@@ -197,8 +202,29 @@ describe("joinRoom event", () => {
       fourthUserLeftEventPresence = true;
     });
 
+    let firstReceivedConfigEventPresence = false;
+    clientSockets.first.on(SocketEvents.RECEIVED_MEDIA_CONFIG, () => {
+      firstReceivedConfigEventPresence = true;
+    });
+
+    let secReceivedConfigEventPresence = false;
+    clientSockets.sec.on(SocketEvents.RECEIVED_MEDIA_CONFIG, () => {
+      secReceivedConfigEventPresence = true;
+    });
+
+    let thirdReceivedConfigEventPresence = false;
+    clientSockets.third.on(SocketEvents.RECEIVED_MEDIA_CONFIG, () => {
+      thirdReceivedConfigEventPresence = true;
+    });
+
+    let fourthReceivedConfigEventPresence = false;
+    fourthClientSocket.on(SocketEvents.RECEIVED_MEDIA_CONFIG, () => {
+      fourthReceivedConfigEventPresence = true;
+    });
+
     clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: false, video: true },
     });
 
     const joinRoomRes = await joinRoomPromise;
@@ -206,17 +232,38 @@ describe("joinRoom event", () => {
     const leftRoomRes = await thirdLeftRoomPromise;
 
     expect(joinRoomRes).toStrictEqual({
+      hostId: userDtos.first.id,
+      maxMembers: 10,
+      mediaConfigs: {
+        [userDtos.first.id]: {
+          audio: true,
+          video: true,
+        },
+        [userDtos.sec.id]: {
+          audio: false,
+          video: true,
+        },
+      },
       users: [userDtos.first, userDtos.sec],
       messages: rooms.get(firstRoom)?.messages,
     });
 
-    expect(userJoinedRes).toStrictEqual({ user: userDtos.sec });
+    expect(userJoinedRes).toStrictEqual({
+      user: userDtos.sec,
+      mediaConfig: { audio: false, video: true },
+    });
+
     expect(leftRoomRes).toStrictEqual({ id: secRoom });
 
     expect(thirdUserJoinedEventPresence).toBe(false);
     expect(thirdUserLeftEventPresence).toBe(false);
     expect(fourthUserJoinedEventPresence).toBe(false);
     expect(fourthUserLeftEventPresence).toBe(false);
+
+    expect(firstReceivedConfigEventPresence).toBe(false);
+    expect(secReceivedConfigEventPresence).toBe(false);
+    expect(thirdReceivedConfigEventPresence).toBe(false);
+    expect(fourthReceivedConfigEventPresence).toBe(false);
 
     expect(rooms.has(firstRoom)).toBe(true);
     expect(rooms.has(secRoom)).toBe(false);
@@ -228,6 +275,22 @@ describe("joinRoom event", () => {
   it("should silently join room from another socket", async () => {
     const { firstRoom, userDtos, clientSockets, serverSockets } =
       await setupSockets();
+
+    const { tokens: thirdTokens } = await createAuthUser(
+      getUniqueMockUserWithoutId(),
+    );
+
+    const fourthClientSocket = testKit.createAuthClient(
+      thirdTokens.accessToken,
+    );
+
+    await waitForClientSocketsConnect(fourthClientSocket);
+    const fourthServerSocket = getServerSocket(
+      testKit.io,
+      fourthClientSocket.id,
+    );
+
+    if (!fourthServerSocket) throw new Error("Server socket isn't defined");
 
     const thirdJoinRoomPromise = waitFor(
       clientSockets.third,
@@ -241,6 +304,7 @@ describe("joinRoom event", () => {
 
     clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: true, video: true },
     });
 
     await thirdJoinRoomPromise;
@@ -254,6 +318,11 @@ describe("joinRoom event", () => {
     const firstLeftRoomPromise = waitFor(
       clientSockets.first,
       SocketEvents.LEFT_ROOM,
+    );
+
+    const thirdReceivedMediaConfigPromise = waitFor(
+      clientSockets.third,
+      SocketEvents.RECEIVED_MEDIA_CONFIG,
     );
 
     let secLeftRoomEventPresence = false;
@@ -271,25 +340,71 @@ describe("joinRoom event", () => {
       thirdUserJoinedEventPresence = true;
     });
 
+    let fourthUserJoinedEventPresence = false;
+    fourthClientSocket.on(SocketEvents.USER_JOINED, () => {
+      fourthUserJoinedEventPresence = true;
+    });
+
+    let firstReceivedConfigEventPresence = false;
+    clientSockets.first.on(SocketEvents.RECEIVED_MEDIA_CONFIG, () => {
+      firstReceivedConfigEventPresence = true;
+    });
+
+    let secReceivedConfigEventPresence = false;
+    clientSockets.sec.on(SocketEvents.RECEIVED_MEDIA_CONFIG, () => {
+      secReceivedConfigEventPresence = true;
+    });
+
+    let fourthReceivedConfigEventPresence = false;
+    fourthClientSocket.on(SocketEvents.RECEIVED_MEDIA_CONFIG, () => {
+      fourthReceivedConfigEventPresence = true;
+    });
+
     clientSockets.sec.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: true, video: false },
     });
 
     const joinRoomRes = await secJoinRoomPromise;
     const leftRoomRes = await firstLeftRoomPromise;
+    const receivedMediaConfigRes = await thirdReceivedMediaConfigPromise;
 
     await waitAfterEmit();
 
     expect(joinRoomRes).toStrictEqual({
+      hostId: userDtos.first.id,
+      maxMembers: 10,
+      mediaConfigs: {
+        [userDtos.first.id]: {
+          audio: true,
+          video: false,
+        },
+        [userDtos.sec.id]: {
+          audio: true,
+          video: true,
+        },
+      },
       users: [userDtos.first, userDtos.sec],
       messages: rooms.get(firstRoom)?.messages,
     });
 
     expect(leftRoomRes).toStrictEqual({ id: firstRoom });
+    expect(receivedMediaConfigRes).toStrictEqual({
+      userId: userDtos.first.id,
+      config: {
+        audio: true,
+        video: false,
+      },
+    });
 
     expect(secLeftRoomEventPresence).toBe(false);
     expect(firstUserJoinedEventPresence).toBe(false);
     expect(thirdUserJoinedEventPresence).toBe(false);
+    expect(fourthUserJoinedEventPresence).toBe(false);
+
+    expect(firstReceivedConfigEventPresence).toBe(false);
+    expect(secReceivedConfigEventPresence).toBe(false);
+    expect(fourthReceivedConfigEventPresence).toBe(false);
 
     expect(rooms.has(firstRoom)).toBe(true);
 
@@ -310,14 +425,24 @@ describe("joinRoom event", () => {
       clientSockets.first,
       SocketEvents.LEFT_ROOM,
     );
+
     clientSockets.sec.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: true, video: true },
     });
 
     const joinRoomRes = await secJoinRoomPromise;
     const leftRoomRes = await firstLeftRoomPromise;
 
     expect(joinRoomRes).toStrictEqual({
+      hostId: userDtos.first.id,
+      maxMembers: 10,
+      mediaConfigs: {
+        [userDtos.first.id]: {
+          audio: true,
+          video: true,
+        },
+      },
       users: [userDtos.first],
       messages: rooms.get(firstRoom)?.messages,
     });
@@ -343,6 +468,7 @@ describe("joinRoom event", () => {
 
     clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: true, video: true },
     });
 
     await thirdJoinRoomPromise;
@@ -383,7 +509,11 @@ describe("joinRoom event", () => {
       thirdUserJoinedEventPresence = true;
     });
 
-    clientSockets.first.emit(SocketEvents.JOIN_ROOM, { id: firstRoom });
+    clientSockets.first.emit(SocketEvents.JOIN_ROOM, {
+      id: firstRoom,
+      mediaConfig: { audio: true, video: true },
+    });
+
     await waitAfterEmit();
 
     expect(firstJoinRoomEventPresence).toBe(false);
@@ -419,6 +549,7 @@ describe("joinRoom event", () => {
 
     clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: true, video: true },
     });
 
     const res = await joinRoomPromise;
@@ -440,6 +571,7 @@ describe("joinRoom event", () => {
 
     clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
       id: firstRoom,
+      mediaConfig: { audio: true, video: true },
     });
 
     const res = await joinRoomPromise;
@@ -450,7 +582,7 @@ describe("joinRoom event", () => {
     expect(checkIsSocketInRoom(serverSockets.third, [firstRoom])).toBe(false);
   });
 
-  it("should return an error message if invalid data is provided", async () => {
+  it("should return an error message if invalid id is provided", async () => {
     const { firstRoom, secRoom, clientSockets, serverSockets } =
       await setupSockets();
 
@@ -461,6 +593,36 @@ describe("joinRoom event", () => {
 
     clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
       id: 0e1 as unknown as string,
+      mediaConfig: {
+        audio: true,
+        video: true,
+      },
+    });
+
+    const res = await joinRoomPromise;
+    expect(res).toStrictEqual({
+      error: SocketResponseErrorMessages.INVALID_DATA,
+    });
+
+    expect(checkIsSocketInRoom(serverSockets.third, [firstRoom])).toBe(false);
+    expect(checkIsSocketInRoom(serverSockets.third, [secRoom])).toBe(true);
+  });
+
+  it("should return an error message if invalid media config is provided", async () => {
+    const { firstRoom, secRoom, clientSockets, serverSockets } =
+      await setupSockets();
+
+    const joinRoomPromise = waitFor(
+      clientSockets.third,
+      SocketResponseEvents.JOIN_ROOM,
+    );
+
+    clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
+      id: firstRoom,
+      mediaConfig: {
+        audio: "true",
+        video: true,
+      } as unknown as sharedModule.SocketMediaConfig,
     });
 
     const res = await joinRoomPromise;
@@ -483,6 +645,7 @@ describe("joinRoom event", () => {
 
     clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
       id: `${firstRoom}corrupted`,
+      mediaConfig: { audio: true, video: true },
     });
 
     const res = await joinRoomPromise;
@@ -495,21 +658,24 @@ describe("joinRoom event", () => {
   });
 
   it("should return an error message and properly clean up everything if an unexpected error is thrown inside getRoomUsers", async () => {
+    const { firstRoom, secRoom, clientSockets, serverSockets } =
+      await setupSockets();
+
     vi.spyOn(getRoomUsersModule, "default").mockRejectedValue(
       new Error("Unexpected Error"),
     );
-
-    const { firstRoom, secRoom, clientSockets, serverSockets } =
-      await setupSockets();
 
     const joinRoomPromise = waitFor(
       clientSockets.third,
       SocketResponseEvents.JOIN_ROOM,
     );
 
-    clientSockets.third.emit(SocketEvents.JOIN_ROOM, { id: firstRoom });
-    const res = await joinRoomPromise;
+    clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
+      id: firstRoom,
+      mediaConfig: { audio: true, video: true },
+    });
 
+    const res = await joinRoomPromise;
     expect(res).toStrictEqual({
       error: SocketResponseErrorMessages.UNEXPECTED_ERROR,
     });
@@ -531,9 +697,12 @@ describe("joinRoom event", () => {
       SocketResponseEvents.JOIN_ROOM,
     );
 
-    clientSockets.third.emit(SocketEvents.JOIN_ROOM, { id: firstRoom });
-    const res = await joinRoomPromise;
+    clientSockets.third.emit(SocketEvents.JOIN_ROOM, {
+      id: firstRoom,
+      mediaConfig: { audio: true, video: true },
+    });
 
+    const res = await joinRoomPromise;
     expect(res).toStrictEqual({
       error: SocketResponseErrorMessages.UNEXPECTED_ERROR,
     });

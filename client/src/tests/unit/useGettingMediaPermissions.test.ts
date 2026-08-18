@@ -1,17 +1,24 @@
 import useGettingMediaPermissions from "@/composables/useGettingMediaPermissions";
 import { usePermissionsStore } from "@/stores/permissions";
-import setupFakeBrowserMediaEngine from "@/tests/utils/setupFakeBrowserMediaEngine";
+import { useUserMedia } from "@vueuse/core";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, nextTick, ref, type EffectScope } from "vue";
 
-const mockMicPermission = ref<PermissionState>("prompt");
-const mockCamPermission = ref<PermissionState>("prompt");
+const mockMicPermission = ref<PermissionState | undefined>("prompt");
+const mockCamPermission = ref<PermissionState | undefined>("prompt");
+
+const mockStart = vi.fn().mockResolvedValue(undefined);
+const mockStop = vi.fn();
 
 vi.mock("@vueuse/core", () => ({
   usePermission: vi.fn((permissionName: "microphone" | "camera") =>
     permissionName === "microphone" ? mockMicPermission : mockCamPermission,
   ),
+  useUserMedia: vi.fn(() => ({
+    start: mockStart,
+    stop: mockStop,
+  })),
 }));
 
 describe("useGettingMediaPermissions", () => {
@@ -19,8 +26,6 @@ describe("useGettingMediaPermissions", () => {
 
   beforeEach(() => {
     setActivePinia(createPinia());
-    setupFakeBrowserMediaEngine();
-
     vi.clearAllMocks();
 
     mockMicPermission.value = "prompt";
@@ -57,6 +62,7 @@ describe("useGettingMediaPermissions", () => {
 
       mockMicPermission.value = "denied";
       mockCamPermission.value = "granted";
+
       await nextTick();
 
       expect(permissionsStore.microphone).toBe("denied");
@@ -64,91 +70,33 @@ describe("useGettingMediaPermissions", () => {
     });
   });
 
-  describe("prompting logic", () => {
-    it("should request both audio and video streams if both permissions are prompted", async () => {
-      mockMicPermission.value = "prompt";
-      mockCamPermission.value = "prompt";
-
+  describe("media permissions requesting", () => {
+    it("should initialize useUserMedia with correct constraints and attempt to start/stop stream", async () => {
       scope.run(() => {
         useGettingMediaPermissions();
       });
 
-      await nextTick();
-      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
-        audio: true,
-        video: true,
+      expect(useUserMedia).toHaveBeenCalledWith({
+        constraints: { video: true, audio: true },
       });
 
-      await vi.waitFor(async () => {
-        const stream = await (
-          navigator.mediaDevices.getUserMedia as unknown as {
-            mock: { results: { value: Promise<MediaStream> }[] };
-          }
-        ).mock.results[0]?.value;
+      expect(mockStart).toHaveBeenCalledOnce();
 
-        expect(stream).toBeDefined();
-        const tracks = stream!.getTracks();
-
-        expect(tracks).toHaveLength(2);
-        expect(tracks.every(track => track.readyState === "ended")).toBe(true);
-      });
+      await Promise.resolve();
+      expect(mockStop).toHaveBeenCalledOnce();
     });
 
-    it("should only request video if only the camera gets prompted", async () => {
-      mockMicPermission.value = "granted";
-      mockCamPermission.value = "prompt";
+    it("should ensure stop is called even if start fails (e.g., user denies prompt)", async () => {
+      mockStart.mockRejectedValueOnce(new Error("Permission denied"));
 
       scope.run(() => {
         useGettingMediaPermissions();
       });
 
-      await nextTick();
-      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
-        audio: false,
-        video: true,
-      });
-    });
+      expect(mockStart).toHaveBeenCalledOnce();
 
-    it("should only request audio if only the microphone gets prompted", async () => {
-      mockMicPermission.value = "prompt";
-      mockCamPermission.value = "denied";
-
-      scope.run(() => {
-        useGettingMediaPermissions();
-      });
-
-      await nextTick();
-      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
-        audio: true,
-        video: false,
-      });
-    });
-
-    it("shouldn't trigger getUserMedia if no permissions are in 'prompt' status", async () => {
-      mockMicPermission.value = "granted";
-      mockCamPermission.value = "denied";
-
-      scope.run(() => {
-        useGettingMediaPermissions();
-      });
-
-      await nextTick();
-      expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
-    });
-
-    it("shouldn't prompt permissions redundantly", async () => {
-      scope.run(() => {
-        useGettingMediaPermissions();
-      });
-
-      await nextTick();
-
-      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledOnce();
-
-      mockMicPermission.value = "prompt";
-      await nextTick();
-
-      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledOnce();
+      await Promise.resolve();
+      expect(mockStop).toHaveBeenCalledOnce();
     });
   });
 });

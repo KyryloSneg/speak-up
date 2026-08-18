@@ -86,7 +86,10 @@ export interface SocketClientToServerEvents {
 }
 
 export interface SocketServerToClientEvents {
-  [SocketEvents.USER_JOINED]: (data: { user: UserDto }) => void;
+  [SocketEvents.USER_JOINED]: (data: {
+    user: UserDto;
+    mediaConfig: SocketMediaConfig;
+  }) => void;
   [SocketEvents.USER_LEFT]: (data: { userId: string }) => void;
   [SocketEvents.LEFT_ROOM]: (data: { id: string }) => void;
   [SocketEvents.RECEIVED_MEDIA_CONFIG]: (data: {
@@ -97,6 +100,7 @@ export interface SocketServerToClientEvents {
     userId: string;
     sdp: string;
     type: "offer" | "answer";
+    screenSharingStreamId?: string | null;
   }) => void;
   [SocketEvents.RECEIVED_ICE]: (data: {
     userId: string;
@@ -113,7 +117,15 @@ export interface SocketServerToClientEvents {
     data: { id: string } | SocketResponseError,
   ) => void;
   [SocketResponseEvents.JOIN_ROOM]: (
-    data: { users: UserDto[]; messages: Message[] } | SocketResponseError,
+    data:
+      | {
+          hostId: string;
+          users: UserDto[];
+          messages: Message[];
+          maxMembers: number;
+          mediaConfigs: Record<string, SocketMediaConfig>;
+        }
+      | SocketResponseError,
   ) => void;
   [SocketResponseEvents.LEAVE_ROOM]: (data: SocketResponseError) => void;
   [SocketResponseEvents.SEND_MEDIA_CONFIG]: (data: SocketResponseError) => void;
@@ -121,7 +133,7 @@ export interface SocketServerToClientEvents {
   [SocketResponseEvents.SEND_SDP]: (data: SocketResponseError) => void;
   [SocketResponseEvents.REMOVE_USER]: (data: SocketResponseError) => void;
   [SocketResponseEvents.SEND_MESSAGE]: (
-    data: { message: Message } | SocketResponseError,
+    data: { message: Message } | (SocketResponseError & { tempId?: string }),
   ) => void;
 }
 

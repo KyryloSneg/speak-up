@@ -38,6 +38,7 @@ export async function createRoomEventHandlerCb(
     removedUserIds: new Set(),
     messages: [],
     maxMembers: data.maxMembers,
+    mediaConfigs: new Map([[socket.data.userId, data.mediaConfig]]),
   } as const;
 
   rooms.set(room.id, room);

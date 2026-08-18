@@ -64,10 +64,16 @@ describe("getRoomUsers", () => {
       SocketResponseEvents.JOIN_ROOM,
     );
 
-    firstClientSocket.emit(SocketEvents.CREATE_ROOM, { maxMembers: 10 });
+    firstClientSocket.emit(SocketEvents.CREATE_ROOM, {
+      maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
+    });
 
     const room = ((await createRoomEventDataPromise) as { id: string }).id;
-    secClientSocket.emit(SocketEvents.JOIN_ROOM, { id: room });
+    secClientSocket.emit(SocketEvents.JOIN_ROOM, {
+      id: room,
+      mediaConfig: { audio: true, video: true },
+    });
 
     await joinRoomEventDataPromise;
 

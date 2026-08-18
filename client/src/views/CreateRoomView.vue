@@ -8,6 +8,10 @@
       to: RoutesWithoutParams.HOME,
       variant: 'secondary',
     }"
+    :invisibleFocus="{
+      text: 'Go back to the header',
+      props: { selector: 'header' },
+    }"
     :submitButton="{
       text: 'Create',
       submit,
@@ -19,8 +23,12 @@
     :titleClass="styles.title"
     :actionClass="styles.action"
   >
-    <UIFieldGroup>
-      <FormField name="maxMembers" :autofocus="true" />
+    <UIFieldGroup :id="homeLayoutFieldGroupId">
+      <FormField
+        name="maxMembers"
+        :preserveErrorSpace="true"
+        :autofocus="true"
+      />
     </UIFieldGroup>
   </FormCard>
 </template>
@@ -32,14 +40,18 @@ import * as styles from "@/components/layout/home/HomeLayout.css";
 import { UIFieldGroup } from "@/components/ui/shadcn/field";
 import { useRoomStore } from "@/stores/room";
 import { RoutesWithoutParams } from "@/types/routes";
-import { getZodCreateRoomDataValidation } from "@speak-up/shared";
+import { homeLayoutFieldGroupId } from "@/utils/idConsts";
+import { getZodRoomMaxMembersValidation } from "@speak-up/shared";
 import { toTypedSchema } from "@vee-validate/zod";
 import { useForm } from "vee-validate";
 import { computed } from "vue";
+import z from "zod";
 
 const roomStore = useRoomStore();
 const { handleSubmit, isSubmitting, errors } = useForm({
-  validationSchema: toTypedSchema(getZodCreateRoomDataValidation()),
+  validationSchema: toTypedSchema(
+    z.object({ maxMembers: getZodRoomMaxMembersValidation() }).strict(),
+  ),
   initialValues: {
     maxMembers: "10",
   },

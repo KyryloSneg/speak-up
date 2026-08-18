@@ -4,9 +4,10 @@
     <div :class="baseStyles.selectPreviewWrapper">
       <CameraSelect />
       <div :class="styles.previewBgWrapper">
-        <UserMediaPreviewBg
+        <MediaBg
           videoAriaLabel="Camera preview"
-          :srcObject="mediaStore.userMediaStream"
+          :isLocal="true"
+          :srcObject="streamData.stream.value"
         />
       </div>
     </div>
@@ -14,13 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import UserMediaPreviewBg from "@/components/userMedia/preview/bg/UserMediaPreviewBg.vue";
+import MediaBg from "@/components/userMedia/bg/MediaBg.vue";
 import CameraSelect from "@/components/userMedia/selects/camera/CameraSelect.vue";
-import useStartingUserMedia from "@/composables/useStartingUserMedia";
-import { useMediaStore } from "@/stores/media";
+import useSingleUserMediaStream from "@/composables/useSingleUserMediaStream";
 import * as baseStyles from "../base.css";
 import * as styles from "./SettingsVideoTabContent.css";
 
-const mediaStore = useMediaStore();
-useStartingUserMedia();
+const streamData = useSingleUserMediaStream("video");
 </script>

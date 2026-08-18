@@ -112,7 +112,10 @@ describe("emitUserEvent", () => {
     });
 
     const eventData: SocketServerToClientEventsData[typeof SocketEvents.USER_JOINED] =
-      { user: mapToUserDto(mockUser) } as const;
+      {
+        user: mapToUserDto(mockUser),
+        mediaConfig: { audio: true, video: true },
+      } as const;
 
     emitUserEvent(testKit.io, firstUserId, SocketEvents.USER_JOINED, [
       eventData,
@@ -148,7 +151,10 @@ describe("emitUserEvent", () => {
     });
 
     const eventData: SocketServerToClientEventsData[typeof SocketEvents.USER_JOINED] =
-      { user: mapToUserDto(mockUser) } as const;
+      {
+        user: mapToUserDto(mockUser),
+        mediaConfig: { audio: true, video: true },
+      } as const;
 
     emitUserEvent(
       testKit.io,

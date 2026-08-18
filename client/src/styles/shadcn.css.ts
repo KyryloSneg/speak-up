@@ -27,11 +27,16 @@ globalStyle(":root", {
     "--destructive": globalThemeContract.backgroundColor.danger,
     "--destructive-foreground": globalThemeContract.color.onDanger,
 
+    "--warning": globalThemeContract.backgroundColor.warning,
+    "--success": globalThemeContract.outline.activeSpeaker,
+
     "--border": globalThemeContract.border.subtle,
     "--input": globalThemeContract.border.element,
     "--ring": globalThemeContract.outline.focus,
 
     "--radius": "0.625rem",
     "--default-transition-duration": "200ms",
+    "--transition-timing-function-fast-out-slow-in":
+      "cubic-bezier(0.4, 0, 0.2, 1)",
   },
 });

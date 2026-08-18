@@ -4,7 +4,7 @@
     <div :class="styles.headingDetailsWrapper">
       <h2 :class="styles.heading">
         Conferences and videomeetups for
-        <span :class="styles.headingSpan">everyone</span>
+        <strong :class="styles.headingSpan">everyone</strong>
       </h2>
       <p :class="styles.details">
         {{

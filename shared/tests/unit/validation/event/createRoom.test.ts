@@ -10,10 +10,15 @@ describe("createRoomValidator", () => {
     return getZodCreateRoomDataValidation().safeParse(message).success;
   }
 
+  type Message =
+    SocketClientToServerEventsData[typeof SocketEvents.CREATE_ROOM];
+
   describe("valid message", () => {
     it("should pass if a valid message is provided", () => {
-      const message: SocketClientToServerEventsData[typeof SocketEvents.CREATE_ROOM] =
-        { maxMembers: 10 };
+      const message: Message = {
+        maxMembers: 10,
+        mediaConfig: { audio: true, video: false },
+      };
 
       const isValid = checkIsValid(message);
       expect(isValid).toBe(true);
@@ -36,8 +41,26 @@ describe("createRoomValidator", () => {
         expect(isValid).toBe(false);
       });
 
+      it("should fail if mediaConfig is missing", () => {
+        const message = { maxMembers: 10 };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
+      it("should fail if maxMembers is missing", () => {
+        const message = { mediaConfig: { audio: true, video: true } };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
       it("should fail if a redundant field is provided", () => {
-        const message = { maxMembers: 10, extra: "extra" };
+        const message: Message & { extra: string } = {
+          maxMembers: 10,
+          mediaConfig: { audio: false, video: true },
+          extra: "extra",
+        };
 
         const isValid = checkIsValid(message);
         expect(isValid).toBe(false);
@@ -46,8 +69,23 @@ describe("createRoomValidator", () => {
 
     describe("invalid value", () => {
       it("should fail if an invalid maxMembers is provided", () => {
-        const message: SocketClientToServerEventsData[typeof SocketEvents.CREATE_ROOM] =
-          { maxMembers: 0 };
+        const message: Message = {
+          maxMembers: 0,
+          mediaConfig: { audio: false, video: false },
+        };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
+      it("should fail if an invalid mediaConfig is provided", () => {
+        const message: Message = {
+          maxMembers: 0,
+          mediaConfig: {
+            audio: "false",
+            video: false,
+          } as unknown as Message["mediaConfig"],
+        };
 
         const isValid = checkIsValid(message);
         expect(isValid).toBe(false);

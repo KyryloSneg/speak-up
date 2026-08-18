@@ -13,18 +13,35 @@ describe("sendSDPValidator", () => {
   const userId = "userId";
   const sdp = "sdp";
 
+  type Message = SocketClientToServerEventsData[typeof SocketEvents.SEND_SDP];
+
   describe("valid message", () => {
     it("should pass if a valid offer message is provided", () => {
-      const message: SocketClientToServerEventsData[typeof SocketEvents.SEND_SDP] =
-        { userId, sdp, type: "offer" };
+      const message: Message = { userId, sdp, type: "offer" };
 
       const isValid = checkIsValid(message);
       expect(isValid).toBe(true);
     });
 
     it("should pass if a valid answer message is provided", () => {
-      const message: SocketClientToServerEventsData[typeof SocketEvents.SEND_SDP] =
-        { userId, sdp, type: "answer" };
+      const message: Message = {
+        userId,
+        sdp,
+        type: "answer",
+        screenSharingStreamId: null,
+      };
+
+      const isValid = checkIsValid(message);
+      expect(isValid).toBe(true);
+    });
+
+    it("should pass if a valid offer message is provided with screenSharingStreamId", () => {
+      const message: Message = {
+        userId,
+        sdp,
+        type: "offer",
+        screenSharingStreamId: "screenSharingStreamId",
+      };
 
       const isValid = checkIsValid(message);
       expect(isValid).toBe(true);
@@ -98,8 +115,33 @@ describe("sendSDPValidator", () => {
         expect(isValid).toBe(false);
       });
 
+      it("should fail if an invalid screenSharingStreamId is provided", () => {
+        const message: Message = {
+          userId,
+          sdp,
+          type: "offer",
+          screenSharingStreamId:
+            0e1 as unknown as Message["screenSharingStreamId"],
+        };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
       it("should fail if invalid userId, sdp and type are provided", () => {
         const message = { userId: 0e1, sdp: 0e1, type: "offerAndAnswer" };
+
+        const isValid = checkIsValid(message);
+        expect(isValid).toBe(false);
+      });
+
+      it("should fail if invalid userId, sdp, type and screenSharingStreamId are provided", () => {
+        const message = {
+          userId: 0e1,
+          sdp: 0e1,
+          type: "offerAndAnswer",
+          screenSharingStreamId: 0e1,
+        };
 
         const isValid = checkIsValid(message);
         expect(isValid).toBe(false);

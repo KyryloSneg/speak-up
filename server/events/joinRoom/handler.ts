@@ -61,6 +61,9 @@ async function joinRoomEventHandlerCb(
 
   if (joinedUserSocket === socket) return;
 
+  // leaveRoom util clears current media config, so save it here
+  const currentMediaConfig = room.mediaConfigs.get(socket.data.userId);
+
   // if we are going to join the same room from a different socket,
   // kick the previous socket out silently
   const isLoudRoomLeave = !joinedUserSocket;
@@ -86,9 +89,28 @@ async function joinRoomEventHandlerCb(
     throw e;
   }
 
+  if (
+    currentMediaConfig &&
+    (currentMediaConfig.audio !== data.mediaConfig.audio ||
+      currentMediaConfig.video !== data.mediaConfig.video)
+  ) {
+    emitRoomEvent(
+      io,
+      data.id,
+      SocketEvents.RECEIVED_MEDIA_CONFIG,
+      [{ userId: socket.data.userId, config: data.mediaConfig }],
+      [socket.id],
+    );
+  }
+
+  room.mediaConfigs.set(socket.data.userId, data.mediaConfig);
+
   socket.emit(SocketResponseEvents.JOIN_ROOM, {
+    hostId: room.hostId,
     users: userDtos,
     messages: room.messages,
+    maxMembers: room.maxMembers,
+    mediaConfigs: Object.fromEntries(room.mediaConfigs.entries()),
   });
 
   if (isLoudRoomLeave) {
@@ -97,7 +119,7 @@ async function joinRoomEventHandlerCb(
       io,
       data.id,
       SocketEvents.USER_JOINED,
-      [{ user: userDto! }],
+      [{ user: userDto!, mediaConfig: data.mediaConfig }],
       [socket.id],
     );
   }

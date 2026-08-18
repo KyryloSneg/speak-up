@@ -1,4 +1,6 @@
-import setCookie from "#services/setCookie.ts";
+import setCookie, {
+  DEFAULT_COOKIE_SECURITY_OPTIONS,
+} from "#services/setCookie.ts";
 import UserService from "#services/userService.ts";
 import type { AuthRequest } from "#types/request.ts";
 import { REFRESH_TOKEN_EXPIRATION_TIME_DAYS } from "#utils/consts.ts";
@@ -68,7 +70,7 @@ class UserController {
       const { refreshToken } = req.cookies;
       const token = await UserService.logout(refreshToken);
 
-      res.clearCookie("refreshToken");
+      res.clearCookie("refreshToken", DEFAULT_COOKIE_SECURITY_OPTIONS);
 
       res.json(token);
     } catch (e) {

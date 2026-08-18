@@ -13,12 +13,7 @@ const props = defineProps<
   <SelectValue
     data-slot="select-value"
     v-bind="props"
-    :class="
-      cn(
-        'data-placeholder:text-neutral-400 data-placeholder:dark:text-neutral-500',
-        props.class,
-      )
-    "
+    :class="cn('data-placeholder:text-muted-foreground', props.class)"
   >
     <slot />
   </SelectValue>

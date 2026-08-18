@@ -69,13 +69,12 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const authStore = useAuthStore();
-  if (!authStore.isInitialized) {
-    await authStore.initAuth();
-    if (authStore.isAuth) postAuthCb();
-  }
+
+  if (!authStore.isInitialized) await authStore.initAuth();
+  if (authStore.isAuth) postAuthCb();
 
   if (to.meta.accessType === RouteMetaAccessTypes.AUTH && !authStore.isAuth) {
-    const nextRoute = handleLogout(false);
+    const nextRoute = await handleLogout(false);
     return nextRoute;
   }
 
@@ -88,7 +87,22 @@ router.beforeEach(async (to, from) => {
     if (!roomStore.room) return RoutesWithoutParams.HOME;
   } else if (from.name === RouteToName[Routes.ROOM]) {
     const roomStore = useRoomStore();
-    roomStore.leaveRoom(false);
+    const isToLeave =
+      roomStore.isToSupressLeaveConfirm || confirm("Leave this room?");
+
+    roomStore.isToSupressLeaveConfirm = false;
+
+    if (isToLeave) {
+      if (
+        roomStore.room &&
+        !roomStore.isJoining &&
+        !roomStore.roomIdUserIsTryingToJoin
+      ) {
+        roomStore.leaveRoom(false);
+      }
+    } else {
+      return from.path;
+    }
   }
 });
 

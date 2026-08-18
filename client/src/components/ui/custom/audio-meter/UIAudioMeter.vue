@@ -99,7 +99,7 @@ const styleVariants = computed<styles.RootVariants>(() => ({
   color: colorVariant,
 }));
 
-const isRingActivated = computed(() => volume.value > 5);
+const isRingActivated = computed(() => !!volume.value);
 
 const ringIndicatorDashArray = 88;
 const ringIndicatoDashOffset = computed(() => {

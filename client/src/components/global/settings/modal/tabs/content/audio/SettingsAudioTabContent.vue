@@ -5,7 +5,7 @@
       <MicSelect />
       <UIAudioMeter
         variant="bar"
-        :getAudioTrack="() => mediaStore.userAudioTrack"
+        :getAudioTrack="() => streamData.track.value"
         :aria-disabled="isAudioMeterDisabled"
       />
     </div>
@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import UIAudioMeter from "@/components/ui/custom/audio-meter/UIAudioMeter.vue";
 import MicSelect from "@/components/userMedia/selects/microphone/MicSelect.vue";
-import useStartingUserMedia from "@/composables/useStartingUserMedia";
+import useSingleUserMediaStream from "@/composables/useSingleUserMediaStream";
 import { useMediaStore } from "@/stores/media";
 import { usePermissionsStore } from "@/stores/permissions";
 import { computed } from "vue";
@@ -28,5 +28,5 @@ const isAudioMeterDisabled = computed(
   () => permissionsStore.microphone !== "granted",
 );
 
-useStartingUserMedia();
+const streamData = useSingleUserMediaStream("audio");
 </script>

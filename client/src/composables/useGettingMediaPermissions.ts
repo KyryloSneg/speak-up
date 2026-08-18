@@ -1,75 +1,37 @@
 import { usePermissionsStore } from "@/stores/permissions";
-import { usePermission } from "@vueuse/core";
-import { watch } from "vue";
+import { usePermission, useUserMedia } from "@vueuse/core";
+import { watchEffect } from "vue";
 
 function useGettingMediaPermissions() {
   const permissionsStore = usePermissionsStore();
 
-  const microphoneRef = usePermission("microphone");
-  const cameraRef = usePermission("camera");
+  const micPermission = usePermission("microphone");
+  const cameraPermission = usePermission("camera");
 
-  watch(
-    microphoneRef,
-    value => {
-      if (value) permissionsStore.microphone = value;
-    },
-    { immediate: true },
-  );
+  const { start, stop } = useUserMedia({
+    constraints: { video: true, audio: true },
+  });
 
-  watch(
-    cameraRef,
-    value => {
-      if (value) permissionsStore.camera = value;
-    },
-    { immediate: true },
-  );
-
-  const prevPromptedPermissions: {
-    camera: boolean | null;
-    microphone: boolean | null;
-  } = {
-    camera: null,
-    microphone: null,
+  const requestPermissions = async () => {
+    try {
+      await start();
+    } catch {
+    } finally {
+      stop();
+    }
   };
 
-  watch(
-    [microphoneRef, cameraRef],
-    ([microphonePermission, cameraPermission]) => {
-      const isCameraPrompt = cameraPermission === "prompt";
-      const isMicrophonePrompt = microphonePermission === "prompt";
+  requestPermissions();
 
-      const isAllMediaPrompt = isCameraPrompt && isMicrophonePrompt;
+  watchEffect(() => {
+    if (micPermission.value) {
+      permissionsStore.microphone = micPermission.value;
+    }
 
-      const hasCameraPromptChanged =
-        isCameraPrompt && prevPromptedPermissions.camera !== isCameraPrompt;
-
-      const hasMicrophonePromptChanged =
-        isMicrophonePrompt &&
-        prevPromptedPermissions.microphone !== isMicrophonePrompt;
-
-      const isToPromptCamera = isAllMediaPrompt || hasCameraPromptChanged;
-      const isToPromptMicrophone =
-        isAllMediaPrompt || hasMicrophonePromptChanged;
-
-      if (isToPromptCamera || isToPromptMicrophone) {
-        navigator.mediaDevices
-          ?.getUserMedia({
-            video: isToPromptCamera,
-            audio: isToPromptMicrophone,
-          })
-          .then(stream =>
-            stream.getTracks().forEach(track => {
-              track.stop();
-            }),
-          )
-          .catch(() => {});
-
-        prevPromptedPermissions.camera = isToPromptCamera;
-        prevPromptedPermissions.microphone = isToPromptMicrophone;
-      }
-    },
-    { immediate: true },
-  );
+    if (cameraPermission.value) {
+      permissionsStore.camera = cameraPermission.value;
+    }
+  });
 }
 
 export default useGettingMediaPermissions;

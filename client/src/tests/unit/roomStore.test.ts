@@ -9,7 +9,7 @@ import type {
   RoomMediaConfigs,
   RoomMediaConfigUserId,
 } from "@/types/media";
-import type { Room } from "@/types/room";
+import type { Room, RoomUser } from "@/types/room";
 import { RoutesWithoutParams } from "@/types/routes";
 import * as updateUserModule from "@/utils/updateUser";
 import {
@@ -29,6 +29,16 @@ vi.mock("@/utils/socket", async () => ({
 vi.mock("@/router/index", () => ({ default: { push: vi.fn() } }));
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
 
+const mockWebRTCStore = {
+  stop: vi.fn(),
+  createPeerConnection: vi.fn(),
+  removePeerConnection: vi.fn(),
+};
+
+vi.mock("@/stores/webrtc", () => ({
+  useWebRTCStore: () => mockWebRTCStore,
+}));
+
 describe("roomStore", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -45,6 +55,15 @@ describe("roomStore", () => {
 
     roomStore.room = { id: "id" } as unknown as Room;
     mediaStore.roomConfigs = new Map();
+    roomStore.openedWindow = "chat";
+    roomStore.memberListTrigger = "trigger";
+    roomStore.maxMembersOfFutureRoom = 10;
+    roomStore.roomIdUserIsTryingToJoin = "id";
+    roomStore.initSentMediaConfig = { audio: true, video: true };
+    roomStore.pinnedItems = [];
+    roomStore.fullScreenItem = { userId: "userId", type: "user" };
+    roomStore.memberAnnouncerText = "text";
+    roomStore.isJoining = true;
   }
 
   function testCleanup(isToRedirect: boolean = true): void {
@@ -52,6 +71,7 @@ describe("roomStore", () => {
     const mediaStore = useMediaStore();
 
     if (isToRedirect) {
+      expect(roomStore.isToSupressLeaveConfirm).toBe(true);
       expect(router.push).toHaveBeenCalledExactlyOnceWith(
         RoutesWithoutParams.HOME,
       );
@@ -61,6 +81,17 @@ describe("roomStore", () => {
 
     expect(roomStore.room).toBeNull();
     expect(mediaStore.roomConfigs).toBeNull();
+    expect(roomStore.openedWindow).toBeNull();
+    expect(roomStore.memberListTrigger).toBeNull();
+    expect(roomStore.maxMembersOfFutureRoom).toBeNull();
+    expect(roomStore.roomIdUserIsTryingToJoin).toBeNull();
+    expect(roomStore.initSentMediaConfig).toBeNull();
+    expect(roomStore.pinnedItems).toBeNull();
+    expect(roomStore.fullScreenItem).toBeNull();
+    expect(roomStore.memberAnnouncerText).toBe("");
+    expect(roomStore.isJoining).toBe(false);
+
+    expect(mockWebRTCStore.stop).toHaveBeenCalledOnce();
   }
 
   describe("bindEvents", () => {
@@ -68,9 +99,13 @@ describe("roomStore", () => {
       event: string,
       isToInverseExpects: boolean = false,
     ): Promise<void> {
-      // create/join/leave
       const roomStore = useRoomStore();
       const error = "Unexpected Error";
+
+      if (!isToInverseExpects) {
+        roomStore.maxMembersOfFutureRoom = 10;
+        roomStore.roomIdUserIsTryingToJoin = "id";
+      }
 
       roomStore.bindEvents();
       roomStore.bindEvents();
@@ -89,12 +124,17 @@ describe("roomStore", () => {
     describe("create room", () => {
       it("should properly listen to received create room event", async () => {
         const authStore = useAuthStore();
+        const mediaStore = useMediaStore();
+
         authStore.user = { id: "id" } as unknown as UserDto;
 
         const roomStore = useRoomStore();
-        roomStore.isJoining = true;
-
+        const maxMembers = 10;
         const id = "id" as const;
+
+        roomStore.maxMembersOfFutureRoom = maxMembers;
+        roomStore.initSentMediaConfig = mediaStore.config;
+        roomStore.isJoining = true;
 
         roomStore.bindEvents();
         roomStore.bindEvents();
@@ -105,14 +145,41 @@ describe("roomStore", () => {
 
         expect(roomStore.room).toStrictEqual({
           id,
+          hostId: authStore.user.id,
           users: [authStore.user],
           messages: [],
+          maxMembers,
         });
 
+        expect(roomStore.pinnedItems).toStrictEqual([]);
+        expect(mediaStore.roomConfigs).toStrictEqual(new Map());
         expect(roomStore.isJoining).toBe(false);
         expect(router.push).toHaveBeenCalledExactlyOnceWith(
           RoutesWithoutParams.ROOM,
         );
+      });
+
+      it("should send updated media config if mediaConfig changed before create room response", async () => {
+        const authStore = useAuthStore();
+        const mediaStore = useMediaStore();
+
+        authStore.user = { id: "id" } as unknown as UserDto;
+
+        const sendMediaConfigSpy = vi.spyOn(mediaStore, "sendMediaConfig");
+        const roomStore = useRoomStore();
+
+        roomStore.maxMembersOfFutureRoom = 10;
+        roomStore.initSentMediaConfig = { audio: false, video: false };
+        roomStore.isJoining = true;
+
+        roomStore.bindEvents();
+        roomStore.bindEvents();
+
+        await mockSocket.triggerServerEvent(SocketResponseEvents.CREATE_ROOM, {
+          id: "id",
+        });
+
+        expect(sendMediaConfigSpy).toHaveBeenCalledWith(mediaStore.config);
       });
 
       it("should properly listen to received error create room event", async () => {
@@ -133,22 +200,26 @@ describe("roomStore", () => {
           authStore.user = { id: "id" } as unknown as UserDto;
 
           const id = "id" as const;
+          const hostId = "hostId" as const;
+          const maxMembers = 10;
 
           const roomStore = useRoomStore();
           const mediaStore = useMediaStore();
 
           roomStore.roomIdUserIsTryingToJoin = id;
+          roomStore.initSentMediaConfig = mediaStore.config;
           roomStore.isJoining = true;
 
+          const otherUserId = "anotherId" as RoomMediaConfigUserId;
           const users: UserDto[] = [
-            { id: "anotherId" } as unknown as UserDto,
+            { id: otherUserId } as unknown as UserDto,
             authStore.user,
           ];
 
           const messages: Message[] = [
             {
-              id: "id",
-              userId: "anotherId",
+              id: "msg1",
+              userId: otherUserId,
               user: {
                 nickname: mockUser.nickname,
                 picture: mockUser.picture,
@@ -156,39 +227,51 @@ describe("roomStore", () => {
               content: [{ type: "text", value: "value" }],
               createdAt: new Date().toISOString(),
             },
-            {
-              id: "anotherId",
-              userId: "anotherId",
-              user: {
-                nickname: mockUser.nickname,
-                picture: mockUser.picture,
-              },
-              content: [{ type: "text", value: "anotherValue" }],
-              createdAt: new Date().toISOString(),
-            },
           ];
+
+          const mediaConfigs = {
+            [otherUserId]: { audio: true, video: false },
+            [authStore.user.id]: { audio: true, video: true },
+          };
 
           roomStore.bindEvents();
           roomStore.bindEvents();
 
           await mockSocket.triggerServerEvent(SocketResponseEvents.JOIN_ROOM, {
+            hostId,
             users,
             messages,
+            maxMembers,
+            mediaConfigs,
           });
 
           expect(roomStore.room).toStrictEqual({
             id,
+            hostId,
             users,
             messages,
+            maxMembers,
           });
 
+          expect(roomStore.pinnedItems).toStrictEqual([]);
           expect(roomStore.roomIdUserIsTryingToJoin).toBeNull();
           expect(roomStore.isJoining).toBe(false);
           expect(router.push).toHaveBeenCalledExactlyOnceWith(
             RoutesWithoutParams.ROOM,
           );
 
-          expect(mediaStore.roomConfigs).toStrictEqual(new Map());
+          const expectedConfigs = new Map([
+            [otherUserId, { userId: otherUserId, audio: true, video: false }],
+          ]);
+
+          expect(mediaStore.roomConfigs).toStrictEqual(expectedConfigs);
+          expect(mockWebRTCStore.createPeerConnection).toHaveBeenCalledWith(
+            otherUserId,
+          );
+
+          expect(mockWebRTCStore.createPeerConnection).not.toHaveBeenCalledWith(
+            authStore.user.id,
+          );
         });
 
         it("should ignore received join room event if user hasn't requested to do so", async () => {
@@ -199,8 +282,8 @@ describe("roomStore", () => {
           const mediaStore = useMediaStore();
 
           const configUserId = "userId" as RoomMediaConfigUserId;
-
           const roomConfigs: RoomMediaConfigs = new Map();
+
           roomConfigs.set(configUserId, {
             userId: configUserId,
             audio: true,
@@ -213,8 +296,11 @@ describe("roomStore", () => {
           roomStore.bindEvents();
 
           await mockSocket.triggerServerEvent(SocketResponseEvents.JOIN_ROOM, {
+            hostId: "hostId",
             users: [{}],
             messages: [{}],
+            maxMembers: 10,
+            mediaConfigs: {},
           });
 
           expect(roomStore.room).toBeNull();
@@ -263,26 +349,55 @@ describe("roomStore", () => {
 
     describe("user joined", () => {
       it("should properly listen to received user joined event", async () => {
-        const initUser: UserDto = { id: "id" } as unknown as UserDto;
+        const mediaStore = useMediaStore();
+        mediaStore.roomConfigs = new Map();
+
+        const initUser: UserDto = {
+          id: "id",
+          nickname: "init",
+        } as unknown as UserDto;
 
         const roomStore = useRoomStore();
-        const room: Room = { id: "id", users: [initUser] } as unknown as Room;
+        const room: Room = {
+          id: "id",
+          users: [initUser],
+          messages: [],
+        } as unknown as Room;
 
         roomStore.room = room;
 
-        const joinedUser: UserDto = { id: "id" } as unknown as UserDto;
+        const joinedUser: UserDto = {
+          id: "joinedId",
+          nickname: "JoinedUser",
+        } as unknown as UserDto;
+        const mediaConfig = { audio: true, video: false };
 
         roomStore.bindEvents();
         roomStore.bindEvents();
 
         await mockSocket.triggerServerEvent(SocketEvents.USER_JOINED, {
           user: joinedUser,
+          mediaConfig,
         });
 
         expect(roomStore.room.users.length).toBe(2);
-
         expect(roomStore.room.users).toContainEqual(initUser);
         expect(roomStore.room.users).toContainEqual(joinedUser);
+
+        expect(
+          mediaStore.roomConfigs.get(joinedUser.id as RoomMediaConfigUserId),
+        ).toStrictEqual({
+          userId: joinedUser.id,
+          ...mediaConfig,
+        });
+
+        expect(mockWebRTCStore.createPeerConnection).toHaveBeenCalledWith(
+          joinedUser.id,
+        );
+
+        expect(roomStore.memberAnnouncerText).toBe(
+          'User "JoinedUser" have joined',
+        );
       });
 
       it("should ignore received user joined event if user isn't in any room", async () => {
@@ -291,6 +406,7 @@ describe("roomStore", () => {
         const joinedUser: UserDto = { id: "id" } as unknown as UserDto;
         await mockSocket.triggerServerEvent(SocketEvents.USER_JOINED, {
           user: joinedUser,
+          mediaConfig: { audio: true, video: true },
         });
 
         expect(roomStore.room).toBeNull();
@@ -299,9 +415,13 @@ describe("roomStore", () => {
 
     describe("user left", () => {
       it("should properly listen to received user left event", async () => {
-        const targetUser: UserDto = { id: "id" } as unknown as UserDto;
+        const targetUser: UserDto = {
+          id: "id",
+          nickname: "target",
+        } as unknown as UserDto;
         const userToLeave: UserDto = {
           id: "anotherId",
+          nickname: "leavingUser",
         } as unknown as UserDto;
 
         const roomStore = useRoomStore();
@@ -310,6 +430,7 @@ describe("roomStore", () => {
         const room: Room = {
           id: "id",
           users: [targetUser, userToLeave],
+          messages: [],
         } as unknown as Room;
 
         roomStore.room = room;
@@ -346,6 +467,12 @@ describe("roomStore", () => {
         expect(mediaStore.roomConfigs.size).toBe(1);
         expect(mediaStore.roomConfigs.get(targetUserConfigId)).toStrictEqual(
           targetUserConfig,
+        );
+        expect(mockWebRTCStore.removePeerConnection).toHaveBeenCalledWith(
+          userToLeave.id,
+        );
+        expect(roomStore.memberAnnouncerText).toBe(
+          'User "leavingUser" have left',
         );
       });
 
@@ -396,13 +523,13 @@ describe("roomStore", () => {
           roomStore.bindEvents();
           roomStore.bindEvents();
 
-          // basically, clearing cleaned-up state does nothing (even if we
-          // ignore the handler's main logic)
           await mockSocket.triggerServerEvent(SocketEvents.LEFT_ROOM, {
             id: "id",
           });
 
-          testCleanup(false);
+          expect(router.push).not.toHaveBeenCalled();
+          expect(roomStore.room).toBeNull();
+          expect(mockWebRTCStore.stop).not.toHaveBeenCalled();
         });
 
         it("should ignore received left room event if user is in a different room", async () => {
@@ -431,6 +558,7 @@ describe("roomStore", () => {
     describe("changed nickname", () => {
       describe("success", () => {
         it("should properly listen to received changed nickname event (user is the target; nickname, picture + letter picture change)", async () => {
+          const userMessageUser = { ...mockUser };
           const room: Room = {
             id: "id",
             users: [
@@ -440,6 +568,15 @@ describe("roomStore", () => {
                 nickname: "anotherNickname",
                 picture: "anotherPicture",
                 letterPicture: "anotherLetterPicture",
+              },
+            ],
+            messages: [
+              {
+                id: "msg1",
+                userId: mockUser.id,
+                user: userMessageUser,
+                content: [{ type: "text", value: "hello" }],
+                createdAt: new Date().toISOString(),
               },
             ],
           } as unknown as Room;
@@ -464,7 +601,11 @@ describe("roomStore", () => {
             ...newData,
           });
 
-          const targets = [authStore.user, room.users[0]!] as const;
+          const targets = [
+            authStore.user,
+            room.users[0]!,
+            userMessageUser,
+          ] as const;
 
           targets.forEach(target => {
             expect(target.nickname).toBe(newData.nickname);
@@ -483,9 +624,19 @@ describe("roomStore", () => {
             letterPicture: "anotherLetterPicture",
           } as unknown as UserDto;
 
+          const anotherMessageUser = { ...anotherUser };
           const room: Room = {
             id: "id",
             users: [mockUser, anotherUser],
+            messages: [
+              {
+                id: "msg1",
+                userId: anotherUser.id,
+                user: anotherMessageUser,
+                content: [{ type: "text", value: "hello" }],
+                createdAt: new Date().toISOString(),
+              },
+            ],
           } as unknown as Room;
 
           const authStore = useAuthStore();
@@ -502,13 +653,15 @@ describe("roomStore", () => {
           } as const;
 
           await mockSocket.triggerServerEvent(SocketEvents.CHANGED_NICKNAME, {
-            userId: anotherUser?.id,
+            userId: anotherUser.id,
             ...newData,
           });
 
           expect(room.users[1]!.nickname).toBe(newData.nickname);
           expect(room.users[1]!.picture).toBe(anotherUser.picture);
           expect(room.users[1]!.letterPicture).toBe(anotherUser.letterPicture);
+
+          expect(anotherMessageUser.nickname).toBe(newData.nickname);
 
           expect(roomStore.room.users[0]).toStrictEqual(mockUser);
           expect(authStore.user).toStrictEqual(mockUser);
@@ -533,7 +686,7 @@ describe("roomStore", () => {
           });
 
           expect(authStore.user).toStrictEqual(mockUser);
-          expect(updateUserSpy).not.toHaveBeenCalled(); // just in case
+          expect(updateUserSpy).not.toHaveBeenCalled();
         });
       });
     });
@@ -560,32 +713,43 @@ describe("roomStore", () => {
   });
 
   describe("createRoom", () => {
-    it("should properly emit create room event", () => {
+    it("should properly emit create room event and set store state", () => {
       const roomStore = useRoomStore();
+      const mediaStore = useMediaStore();
       const maxMembers = 10;
 
       roomStore.createRoom(maxMembers);
       expect(mockSocket.emit).toHaveBeenCalledExactlyOnceWith(
         SocketEvents.CREATE_ROOM,
-        { maxMembers },
+        {
+          maxMembers,
+          mediaConfig: mediaStore.config,
+        },
       );
 
+      expect(roomStore.maxMembersOfFutureRoom).toBe(maxMembers);
+      expect(roomStore.initSentMediaConfig).toBe(mediaStore.config);
       expect(roomStore.isJoining).toBe(true);
     });
   });
 
   describe("joinRoom", () => {
-    it("should properly emit join room message event", () => {
+    it("should properly emit join room message event and set store state", () => {
       const roomStore = useRoomStore();
+      const mediaStore = useMediaStore();
       const id = "id";
 
       roomStore.joinRoom(id);
       expect(mockSocket.emit).toHaveBeenCalledExactlyOnceWith(
         SocketEvents.JOIN_ROOM,
-        { id },
+        {
+          id,
+          mediaConfig: mediaStore.config,
+        },
       );
 
       expect(roomStore.roomIdUserIsTryingToJoin).toBe(id);
+      expect(roomStore.initSentMediaConfig).toBe(mediaStore.config);
       expect(roomStore.isJoining).toBe(true);
     });
   });
@@ -600,7 +764,7 @@ describe("roomStore", () => {
         SocketEvents.LEAVE_ROOM,
       );
 
-      testCleanup();
+      testCleanup(true);
     });
 
     it("should properly emit leave room event with no redirect", () => {
@@ -613,6 +777,49 @@ describe("roomStore", () => {
       );
 
       testCleanup(false);
+    });
+  });
+
+  describe("sortedUsers", () => {
+    it("should return empty array if room is null", () => {
+      const roomStore = useRoomStore();
+      expect(roomStore.sortedUsers).toStrictEqual([]);
+    });
+
+    it("should correctly sort users putting current user first and ordering others by lastSpeakedAt", () => {
+      const authStore = useAuthStore();
+      const roomStore = useRoomStore();
+
+      const authUser = { id: "authId", nickname: "Auth" } as UserDto;
+      authStore.user = authUser;
+
+      const date1 = new Date("2026-01-01T10:00:00Z");
+      const date2 = new Date("2026-01-01T11:00:00Z");
+
+      const userNeverSpoke = { id: "u1", nickname: "NeverSpoke" } as RoomUser;
+      const userSpokeLater = {
+        id: "u2",
+        nickname: "SpokeLater",
+        lastSpeakedAt: date2,
+      } as RoomUser;
+
+      const userSpokeEarlier = {
+        id: "u3",
+        nickname: "SpokeEarlier",
+        lastSpeakedAt: date1,
+      } as RoomUser;
+
+      roomStore.room = {
+        id: "room1",
+        users: [userNeverSpoke, userSpokeLater, authUser, userSpokeEarlier],
+      } as unknown as Room;
+
+      expect(roomStore.sortedUsers).toStrictEqual([
+        authUser,
+        userSpokeEarlier,
+        userSpokeLater,
+        userNeverSpoke,
+      ]);
     });
   });
 });

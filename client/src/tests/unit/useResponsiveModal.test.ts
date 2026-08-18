@@ -1,4 +1,5 @@
 import useResponsiveModal from "@/composables/useResponsiveModal";
+import { responsiveModalBreakpoint } from "@/utils/breakpointConsts";
 import { useMediaQuery } from "@vueuse/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
@@ -51,7 +52,7 @@ describe("useResponsiveModal", () => {
     it("should use the proper default breakpoint", () => {
       useResponsiveModal();
       expect(useMediaQuery).toHaveBeenCalledExactlyOnceWith(
-        "(min-width: 40rem)",
+        `(min-width: ${responsiveModalBreakpoint})`,
       );
     });
 

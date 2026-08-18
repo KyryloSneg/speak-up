@@ -4,6 +4,9 @@
       <UICardTitle :class="titleClass" :as="titleAs">
         {{ heading }}
       </UICardTitle>
+      <UIInvisibleFocus v-if="invisibleFocus" v-bind="invisibleFocus.props">
+        {{ invisibleFocus.text }}
+      </UIInvisibleFocus>
       <UICardAction v-if="link" :class="actionClass">
         <UIButton
           :variant="link.variant || 'link'"
@@ -35,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import UIInvisibleFocus from "@/components/ui/custom/invisible-focus/UIInvisibleFocus.vue";
 import type { ButtonVariants } from "@/components/ui/shadcn/button";
 import UIButton from "@/components/ui/shadcn/button/UIButton.vue";
 import {
@@ -46,6 +50,7 @@ import {
   UICardTitle,
 } from "@/components/ui/shadcn/card/index";
 import type { ComponentAs } from "@/types/props";
+import type { ComponentBindings } from "@/types/vue";
 import { useId, type HTMLAttributes } from "vue";
 import { RouterLink } from "vue-router";
 import * as styles from "./FormCard.css";
@@ -63,6 +68,10 @@ const { width = "adaptive" } = defineProps<{
     text: string;
     to: string;
     variant?: ButtonVariants["variant"];
+  };
+  invisibleFocus?: {
+    text: string;
+    props: ComponentBindings<typeof UIInvisibleFocus>;
   };
   submitButton: {
     text: string;

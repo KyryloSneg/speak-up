@@ -24,6 +24,7 @@ export const useAuthStore = defineStore("auth", () => {
           data.tokens.accessToken,
         );
       }
+    } catch {
     } finally {
       // put it inside finally just in case. we can put an error-throwable code
       // above and forget about these lines

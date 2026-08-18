@@ -10,7 +10,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui";
-import type { HTMLAttributes } from "vue";
+import { useTemplateRef, type HTMLAttributes } from "vue";
 
 defineOptions({
   inheritAttrs: false,
@@ -23,18 +23,28 @@ const props = defineProps<
 const emits = defineEmits<DialogContentEmits>();
 const delegatedProps = reactiveOmit(props, "class");
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
+
+const overlayRef = useTemplateRef("overlay");
+const contentRef = useTemplateRef("content");
+
+defineExpose({
+  $overlayEl: overlayRef,
+  $el: contentRef,
+});
 </script>
 
 <template>
   <DialogPortal>
     <DialogOverlay
       class="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/80 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      ref="overlay"
     >
       <DialogContent
         :class="
           cn(
             'bg-background text-foreground border-border relative z-50 grid w-full max-w-lg my-8 gap-4 border p-6 shadow-lg duration-200 max-sm:border-x-0 sm:rounded-lg md:w-full',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'motion-safe:data-[state=closed]:zoom-out-95 motion-safe:data-[state=open]:zoom-in-95',
             props.class,
           )
         "
@@ -51,6 +61,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
             }
           }
         "
+        ref="content"
       >
         <slot />
 

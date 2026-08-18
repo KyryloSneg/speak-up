@@ -11,6 +11,7 @@ export type MessageContentPart = SchemaOfZodValidationFn<
 
 export interface Message {
   id: string;
+  tempId?: string;
   userId: string;
   user: {
     nickname: UserDto["nickname"];

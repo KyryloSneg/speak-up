@@ -43,7 +43,11 @@ describe("cleanupSocket", () => {
       SocketResponseEvents.CREATE_ROOM,
     );
 
-    clientSocket.emit(SocketEvents.CREATE_ROOM, { maxMembers: 10 });
+    clientSocket.emit(SocketEvents.CREATE_ROOM, {
+      maxMembers: 10,
+      mediaConfig: { audio: true, video: true },
+    });
+
     const room = ((await firstClientSocketCreateRoomPromise) as { id: string })
       .id;
 
