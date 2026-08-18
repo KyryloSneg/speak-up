@@ -4,7 +4,10 @@ async function blobToBase64(blob: Blob): Promise<string> {
 
   let binary = "";
   for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    const chunk = bytes[i];
+    if (!chunk) continue;
+
+    binary += String.fromCharCode(chunk);
   }
 
   const base64 = btoa(binary);

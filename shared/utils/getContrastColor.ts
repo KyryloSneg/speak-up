@@ -30,7 +30,7 @@ function getContrastColorToUse(
     }
 
     return Math.pow((colToCompare + 0.055) / 1.055, 2.4);
-  });
+  }) as unknown as RGB;
 
   const luminance = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   return luminance <= 0.179 ? CONTRAST_COLOR.White : CONTRAST_COLOR.Black;

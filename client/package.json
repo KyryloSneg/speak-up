@@ -14,7 +14,7 @@
     "test:ct": "playwright test -c playwright-ct.config.ts",
     "test:ct:ui": "playwright test -c playwright-ct.config.ts --ui",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build",
+    "type-check": "vue-tsc --project tsconfig.app.json --noEmit",
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
