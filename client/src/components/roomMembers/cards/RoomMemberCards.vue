@@ -19,6 +19,7 @@
         <RoomMemberCardsList
           :layout="pinnedLayout"
           :isInstantTransition="isSingleItem"
+          data-pinned-member-cards="true"
         >
           <template #otherItems="slotProps">
             <RoomOtherPinnedCards
@@ -40,6 +41,7 @@
         <RoomMemberCardsList
           :layout="unpinnedLayout"
           :isInstantTransition="isSingleItem"
+          data-unpinned-member-cards="true"
         >
           <template #otherItems="slotProps">
             <RoomOtherMembers :hiddenItems="slotProps.hiddenItems" />
