@@ -42,16 +42,23 @@ class UserService {
   static async generateLetterPictureWithError(
     nickname: string,
   ): Promise<string> {
-    const letterPictureBlob = await generateLetterPictureBlob(nickname);
-    if (!letterPictureBlob) {
+    function throwLetterPictureError(): void {
       // let the error middleware pick it up as 500
       throw new Error("Letter picture generation is failed");
     }
 
-    // save pictures as a stinky Base64 string because i don't want
-    // to spend time on setting up s3 (this project is not about this)
-    const letterPicture = await blobToBase64(letterPictureBlob);
-    return letterPicture;
+    try {
+      const letterPictureBlob = await generateLetterPictureBlob(nickname);
+      if (!letterPictureBlob) throwLetterPictureError();
+
+      // save pictures as a stinky Base64 string because i don't want
+      // to spend time on setting up s3 (this project is not about this)
+      const letterPicture = await blobToBase64(letterPictureBlob!);
+      return letterPicture;
+    } catch {
+      throwLetterPictureError();
+      return "";
+    }
   }
 
   static async register(
@@ -146,11 +153,18 @@ class UserService {
     const newInitials = getNameInitials(nickname);
 
     const haveInitialsBeenChanged = newInitials !== oldInitials;
-    const newPictureUrl =
-      await UserService.generateLetterPictureWithError(nickname);
 
-    const picture = haveInitialsBeenChanged ? newPictureUrl : undefined;
-    const letterPicture = haveInitialsBeenChanged ? newPictureUrl : undefined;
+    let newPictureUrl: string | undefined;
+    try {
+      newPictureUrl =
+        await UserService.generateLetterPictureWithError(nickname);
+    } catch {}
+
+    const picture =
+      haveInitialsBeenChanged && newPictureUrl ? newPictureUrl : undefined;
+
+    const letterPicture =
+      haveInitialsBeenChanged && newPictureUrl ? newPictureUrl : undefined;
 
     const newUser = await prisma.user.update({
       where: { id: userId },
