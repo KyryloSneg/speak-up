@@ -6,13 +6,19 @@ describe("sendIceValidator", () => {
     return getZodIceValidation().safeParse(message).success;
   }
 
-  const ice = { candidate: "candidate", sdpMid: "sdpMid", sdpMLineIndex: 0 };
+  const ice = {
+    candidate: "candidate",
+    sdpMid: "sdpMid",
+    sdpMLineIndex: 0,
+    usernameFragment: "ufrag",
+  };
 
   const iceWithOnlyCandidate = { candidate: "candidate" };
   const iceWithNullOptionalFields = {
     candidate: "candidate",
     sdpMid: null,
     sdpMLineIndex: null,
+    usernameFragment: null,
   };
 
   const iceWithNoMid = { candidate: "candidate", sdpMLineIndex: 0 };
@@ -40,7 +46,7 @@ describe("sendIceValidator", () => {
       expect(isValid).toBe(true);
     });
 
-    it("should pass if a valid ice is provided (only candidate and null sdpMid and sdpMLineIndex)", () => {
+    it("should pass if a valid ice is provided (candidate + null optional fields)", () => {
       const isValid = checkIsValid(iceWithNullOptionalFields);
       expect(isValid).toBe(true);
     });
@@ -64,6 +70,11 @@ describe("sendIceValidator", () => {
       const isValid = checkIsValid(iceWithNullIndex);
       expect(isValid).toBe(true);
     });
+
+    it("should pass if a redundant field is provided (loose object)", () => {
+      const isValid = checkIsValid({ ...ice, extra: "extra" });
+      expect(isValid).toBe(true);
+    });
   });
 
   describe("invalid ice", () => {
@@ -75,11 +86,6 @@ describe("sendIceValidator", () => {
 
       it("should fail if an empty object is provided", () => {
         const isValid = checkIsValid({});
-        expect(isValid).toBe(false);
-      });
-
-      it("should fail if a redundant field is provided", () => {
-        const isValid = checkIsValid({ ...ice, extra: "extra" });
         expect(isValid).toBe(false);
       });
 
@@ -111,6 +117,11 @@ describe("sendIceValidator", () => {
 
       it("should fail if an invalid sdpMLineIndex is provided", () => {
         const isValid = checkIsValid({ ...ice, sdpMLineIndex: "0" });
+        expect(isValid).toBe(false);
+      });
+
+      it("should fail if an invalid usernameFragment is provided", () => {
+        const isValid = checkIsValid({ ...ice, usernameFragment: 123 });
         expect(isValid).toBe(false);
       });
     });

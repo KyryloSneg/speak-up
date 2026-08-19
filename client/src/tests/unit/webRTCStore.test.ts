@@ -243,7 +243,7 @@ describe("webrtcStore", () => {
       });
     });
 
-    it("should delete usernameFragment, validate, and emit SEND_ICE when PeerConnection fires ICE event", () => {
+    it("validate, and emit SEND_ICE when PeerConnection fires ICE event", () => {
       const webrtcStore = useWebRTCStore();
       const remoteId = "user-1";
       const pc = webrtcStore.createPeerConnection(
@@ -253,16 +253,16 @@ describe("webrtcStore", () => {
       const payload = {
         ice: {
           candidate: "candidate:123",
-          usernameFragment: "frag-to-be-deleted",
+          usernameFragment: "usernameFragment",
         },
       };
 
       pc.trigger(PeerConnectionEvents.ICE, payload);
 
-      expect(payload.ice.usernameFragment).toBeUndefined();
+      expect(payload.ice.usernameFragment).toBe("usernameFragment");
       expect(mockSocket.emit).toHaveBeenCalledWith(SocketEvents.SEND_ICE, {
         userId: remoteId,
-        ice: { candidate: "candidate:123" },
+        ice: payload.ice,
       });
     });
 

@@ -212,6 +212,30 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
     try {
       this.pc = new RTCPeerConnection(WEBRTC_CONFIG);
 
+      this.pc.oniceconnectionstatechange = () => {
+        const state = this.pc?.iceConnectionState;
+
+        if (state === "failed") {
+          console.warn(
+            `[PeerConnection:${this.remoteId}] ICE state failed. Attempting ICE restart...`,
+          );
+
+          this.pc?.restartIce();
+        }
+      };
+
+      this.pc.onconnectionstatechange = () => {
+        const state = this.pc?.connectionState;
+
+        if (state === "failed") {
+          this.handleError(
+            new Error("Peer connection failed"),
+            "Peer connection failed to establish or was lost",
+            onError,
+          );
+        }
+      };
+
       this.pc.onnegotiationneeded = async () => {
         if (this.isSettingRemoteDescription) return;
         if (

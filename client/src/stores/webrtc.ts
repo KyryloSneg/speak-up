@@ -85,9 +85,8 @@ export const useWebRTCStore = defineStore("webrtc", () => {
 
     pc.on(PeerConnectionEvents.ICE, payload => {
       const { ice } = payload as IcePayload;
-      delete ice.usernameFragment;
-
       const validation = getZodIceValidation().safeParse(ice);
+
       if (validation.success) {
         socket.emit(SocketEvents.SEND_ICE, {
           userId: remoteId,

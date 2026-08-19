@@ -120,13 +120,12 @@ export function getZodIdValidation() {
 }
 
 export function getZodIceValidation() {
-  return z
-    .object({
-      candidate: z.string(),
-      sdpMid: z.string().nullable().optional(),
-      sdpMLineIndex: z.number().nullable().optional(),
-    })
-    .strict();
+  return z.looseObject({
+    candidate: z.string(),
+    sdpMid: z.string().nullable().optional(),
+    sdpMLineIndex: z.number().nullable().optional(),
+    usernameFragment: z.string().nullable().optional(),
+  });
 }
 
 // REST API
