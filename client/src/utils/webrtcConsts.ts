@@ -14,5 +14,6 @@ export const WEBRTC_CONFIG: RTCConfiguration = {
     },
   ],
   bundlePolicy: "max-bundle",
+  iceTransportPolicy: "relay",
   iceCandidatePoolSize: 10,
 };

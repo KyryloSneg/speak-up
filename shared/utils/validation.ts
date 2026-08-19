@@ -182,10 +182,12 @@ export function getZodSendMediaConfigDataValidation() {
 }
 
 export function getZodSendIceDataValidation() {
-  return z.object({
-    userId: getZodIdValidation(),
-    ice: getZodIceValidation(),
-  });
+  return z
+    .object({
+      userId: getZodIdValidation(),
+      ice: getZodIceValidation(),
+    })
+    .strict();
 }
 
 export function getZodSendSDPDataValidation() {
