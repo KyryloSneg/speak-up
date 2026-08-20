@@ -45,6 +45,9 @@ describe("PeerConnection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupFakeBrowserWebRTCEngine();
+
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -62,16 +65,16 @@ describe("PeerConnection", () => {
       expect(pc.userMediaAudioSender).toBeNull();
     });
 
-    it("should create RTCPeerConnection instance on start()", () => {
+    it("should create RTCPeerConnection instance on start()", async () => {
       const pc = new PeerConnection(REMOTE_ID, true);
-      pc.start();
+      await pc.start();
 
       expect(pc.pc).toBeInstanceOf(MockRTCPeerConnection);
     });
 
-    it("should clean up connection and listeners on stop()", () => {
+    it("should clean up connection and listeners on stop()", async () => {
       const pc = new PeerConnection(REMOTE_ID, true);
-      pc.start();
+      await pc.start();
 
       const emitSpy = vi.spyOn(pc, "off");
       const closeSpy = vi.spyOn(pc.pc!, "close");
@@ -87,12 +90,11 @@ describe("PeerConnection", () => {
   });
 
   describe("error handling", () => {
-    it("should map specific WebRTC error types to corresponding error messages", () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-
+    it("should map specific WebRTC error types to corresponding error messages", async () => {
       const onErrorMock = vi.fn();
+
       const pc = new PeerConnection(REMOTE_ID, true, { onError: onErrorMock });
-      pc.start();
+      await pc.start();
 
       const invalidStateErr = new Error();
       invalidStateErr.name = "InvalidStateError";
@@ -114,7 +116,7 @@ describe("PeerConnection", () => {
 
   describe("localUserMediaStreamEventHandler", () => {
     it("should nullify sender tracks when stream is null or has no tracks", async () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const videoTrack = createMockTrack("video");
       const audioTrack = createMockTrack("audio");
       const stream = createMockStream("stream-1", [videoTrack, audioTrack]);
@@ -137,7 +139,7 @@ describe("PeerConnection", () => {
     });
 
     it("should add tracks and set contentHints during user media initialization", async () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const videoTrack = createMockTrack("video");
       const audioTrack = createMockTrack("audio");
       const stream = createMockStream("stream-1", [videoTrack, audioTrack]);
@@ -152,7 +154,7 @@ describe("PeerConnection", () => {
     });
 
     it("should update bitrate parameters on the audio sender", async () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const audioTrack = createMockTrack("audio");
       const stream = createMockStream("stream-1", [audioTrack]);
 
@@ -173,8 +175,8 @@ describe("PeerConnection", () => {
   });
 
   describe("localScreenSharingStreamEventHandler", () => {
-    it("should add screen share tracks and trigger optimizer utility", () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+    it("should add screen share tracks and trigger optimizer utility", async () => {
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const videoTrack = createMockTrack("video");
       const stream = createMockStream("screen-stream-1", [videoTrack]);
 
@@ -188,8 +190,8 @@ describe("PeerConnection", () => {
       );
     });
 
-    it("should remove existing screen share tracks when stream is cleared", () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+    it("should remove existing screen share tracks when stream is cleared", async () => {
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const videoTrack = createMockTrack("video");
       const stream = createMockStream("screen-stream-1", [videoTrack]);
 
@@ -206,7 +208,7 @@ describe("PeerConnection", () => {
 
   describe("negotiation and signaling", () => {
     it("should handle negotiationneeded and emit local offer", async () => {
-      const pc = new PeerConnection(REMOTE_ID, false).start();
+      const pc = await new PeerConnection(REMOTE_ID, false).start();
       const sdpCb = vi.fn();
 
       pc.on(PeerConnectionEvents.SDP, sdpCb);
@@ -221,7 +223,7 @@ describe("PeerConnection", () => {
     });
 
     it("should ignore incoming offer if impolite and offer collision happens", async () => {
-      const pc = new PeerConnection(REMOTE_ID, false).start();
+      const pc = await new PeerConnection(REMOTE_ID, false).start();
       (pc.pc as any).signalingState = "have-local-offer";
 
       await pc.setRemoteDescription({ type: "offer", sdp: "dummy-sdp" });
@@ -229,7 +231,7 @@ describe("PeerConnection", () => {
     });
 
     it("should rollback local offer if polite and offer collision happens", async () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start(); // polite
+      const pc = await new PeerConnection(REMOTE_ID, true).start(); // polite
       (pc.pc as any).signalingState = "have-local-offer";
 
       await pc.setRemoteDescription({ type: "offer", sdp: "dummy-sdp" });
@@ -241,7 +243,7 @@ describe("PeerConnection", () => {
     });
 
     it("should create answer and emit 'sdp' event when receiving remote offer", async () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const sdpCb = vi.fn();
 
       pc.on(PeerConnectionEvents.SDP, sdpCb);
@@ -257,7 +259,7 @@ describe("PeerConnection", () => {
 
   describe("ice candidates", () => {
     it("should queue candidate if remoteDescription is missing and process it once set", async () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const candidateInit = { candidate: "candidate:123" };
 
       await pc.addIceCandidate(candidateInit);
@@ -267,8 +269,8 @@ describe("PeerConnection", () => {
       expect(pc.pc!.addIceCandidate).toHaveBeenCalledOnce();
     });
 
-    it("should emit 'ice' event when local 'ice' candidate is generated", () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+    it("should emit 'ice' event when local 'ice' candidate is generated", async () => {
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const iceCallback = vi.fn();
       pc.on(PeerConnectionEvents.ICE, iceCallback);
 
@@ -282,8 +284,8 @@ describe("PeerConnection", () => {
   });
 
   describe("ontrack", () => {
-    it("should emit 'remote user media stream' event for incoming media track", () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+    it("should emit 'remote user media stream' event for incoming media track", async () => {
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       const track = createMockTrack("video");
       const stream = createMockStream("remote-stream", [track]);
 
@@ -299,8 +301,8 @@ describe("PeerConnection", () => {
       expect(track.contentHint).toBe("motion");
     });
 
-    it("should emit 'remote screen sharing stream' event if stream matches remoteScreenSharingStreamId", () => {
-      const pc = new PeerConnection(REMOTE_ID, true).start();
+    it("should emit 'remote screen sharing stream' event if stream matches remoteScreenSharingStreamId", async () => {
+      const pc = await new PeerConnection(REMOTE_ID, true).start();
       pc.remoteScreenSharingStreamId = "remote-screen-id";
 
       const track = createMockTrack("video");

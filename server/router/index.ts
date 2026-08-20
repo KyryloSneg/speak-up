@@ -1,4 +1,5 @@
 import UserController from "#controllers/userController.ts";
+import WebRTCController from "#controllers/webRTCController.ts";
 import authMiddleware from "#middlewares/api/apiAuthMiddleware.ts";
 import changeNicknameBodyValidator from "#validators/changeNicknameBodyValidator.ts";
 import registerBodyValidator from "#validators/registerBodyValidator.ts";
@@ -31,5 +32,11 @@ router.patch(
 );
 
 router.get(NoPrefixApiRoutes.REFRESH, UserController.refresh);
+router.get(
+  NoPrefixApiRoutes.ICE_SERVERS,
+  authMiddleware, // unauth users have no need in this endpoint
+  // @ts-expect-error: same as above
+  WebRTCController.getIceServers,
+);
 
 export default router;

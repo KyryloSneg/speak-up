@@ -19,7 +19,13 @@ export default defineConfigWithVueTs(
   {
     languageOptions: {
       parserOptions: {
+        project: [
+          "./tsconfig.app.json",
+          "./tsconfig.vitest.json",
+          "./tsconfig.node.json",
+        ],
         tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: [".vue"],
       },
     },
   },

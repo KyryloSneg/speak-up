@@ -15,6 +15,7 @@ export const NoPrefixApiRoutes = {
   LOGOUT: "/logout",
   REFRESH: "/refresh",
   CHANGE_NICKNAME: "/change-nickname",
+  ICE_SERVERS: "/webrtc/ice-servers",
 } as const;
 
 type ApiRoutesType = {
@@ -61,3 +62,8 @@ export type LogoutResponseBody =
 
 export type RefreshResponseBody = UserDataWithTokens | AnyErrorResponse;
 export type ChangeNicknameResponseBody = UserDto | AnyErrorResponse;
+
+export type GetIceServersResponseBody =
+  | RTCIceServer[]
+  | null
+  | AnyErrorResponse;

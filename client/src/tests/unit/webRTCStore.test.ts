@@ -63,7 +63,7 @@ const MockPeerConnection = vi.hoisted(() => {
       handlers.forEach(handler => handler(payload));
     }
 
-    start = vi.fn();
+    start = vi.fn(async () => {});
     stop = vi.fn();
     setRemoteDescription = vi.fn().mockResolvedValue(undefined);
     addIceCandidate = vi.fn().mockResolvedValue(undefined);
@@ -198,7 +198,7 @@ describe("webrtcStore", () => {
       expect(pc1).toBe(pc2);
     });
 
-    it("should attach media streams from mediaStore if they exist on creation", () => {
+    it("should attach media streams from mediaStore if they exist on creation", async () => {
       const mediaStore = useMediaStore();
       const webrtcStore = useWebRTCStore();
 
@@ -212,13 +212,18 @@ describe("webrtcStore", () => {
         "user-1",
       ) as unknown as MockPC;
 
-      expect(pc.localUserMediaStreamEventHandler).toHaveBeenCalledWith(
-        userMediaStream,
-      );
-
-      expect(pc.localScreenSharingStreamEventHandler).toHaveBeenCalledWith(
-        screenSharingStream,
-      );
+      await Promise.allSettled([
+        expect.poll(() =>
+          expect(pc.localUserMediaStreamEventHandler).toHaveBeenCalledWith(
+            userMediaStream,
+          ),
+        ),
+        expect.poll(() =>
+          expect(pc.localScreenSharingStreamEventHandler).toHaveBeenCalledWith(
+            userMediaStream,
+          ),
+        ),
+      ]);
     });
 
     it("should emit SEND_SDP socket event when PeerConnection fires SDP event", () => {

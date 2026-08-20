@@ -5,6 +5,7 @@ import {
   type AnyErrorResponse,
   type ChangeNicknameRequestBody,
   type ChangeNicknameResponseBody,
+  type GetIceServersResponseBody,
   type LogoutResponseBody,
   type RefreshResponseBody,
   type RegisterRequestBody,
@@ -116,6 +117,13 @@ const $api = {
         method: "PATCH",
         url: ApiRoutes.CHANGE_NICKNAME,
         data,
+      }),
+  },
+  webrtc: {
+    getIceServers: () =>
+      safeRequest<GetIceServersResponseBody>(authApiInstance, {
+        method: "GET",
+        url: ApiRoutes.ICE_SERVERS,
       }),
   },
 } as const;

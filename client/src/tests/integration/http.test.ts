@@ -171,6 +171,23 @@ describe("http", () => {
       const res = await $api.user.changeNickname(changeNicknameReqBody as any);
       expect(res.data).toStrictEqual(resBody);
     });
+
+    it("should make a proper get-ice-servers request", async () => {
+      const resBody = [
+        {
+          urls: ["turn:relay.example.com:443"],
+          username: "test-user",
+          credential: "test-credential",
+        },
+      ] as const;
+
+      server.use(
+        http.get(BaseApiRoutes.ICE_SERVERS, () => HttpResponse.json(resBody)),
+      );
+
+      const res = await $api.webrtc.getIceServers();
+      expect(res.data).toStrictEqual(resBody);
+    });
   });
 
   describe("authApiInstance request interceptor", () => {

@@ -3,7 +3,14 @@
 
   // Override to include only test files and clear exclusions.
   // Application code imported in tests is automatically included via module resolution.
-  "include": ["src/**/__tests__/*", "env.d.ts"],
+  "include": [
+    "env.d.ts",
+    "src/**/*",
+    "src/**/*.vue",
+    "playwright/**/*",
+    "playwright.config.ts",
+    "playwright-ct.config.ts"
+  ],
   "exclude": [],
 
   "compilerOptions": {

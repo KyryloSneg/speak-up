@@ -1,4 +1,5 @@
 import Emitter from "@/services/Emitter";
+import getWebRTCConfig from "@/services/webrtcConfig";
 import {
   PeerConnectionEvents,
   type PeerConnectionEventsValue,
@@ -7,7 +8,6 @@ import { PREFERRED_VIDEO_CODECS } from "@/utils/mediaConsts";
 import optimizeAudioSdp from "@/utils/optimizeAudioSdp";
 import sortByMIMETypes from "@/utils/sortByMIMETypes";
 import startOptimizingScreenSharingVideo from "@/utils/startOptimizingScreenSharingVideo";
-import { WEBRTC_CONFIG } from "@/utils/webrtcConsts";
 
 export type PeerConnectionOnError = (info: {
   error: Error | null;
@@ -208,9 +208,10 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
     }
   }
 
-  public start(onError?: PeerConnectionOnError): this {
+  public async start(onError?: PeerConnectionOnError): Promise<this> {
     try {
-      this.pc = new RTCPeerConnection(WEBRTC_CONFIG);
+      const webRTCConfig = await getWebRTCConfig();
+      this.pc = new RTCPeerConnection(webRTCConfig);
 
       this.pc.oniceconnectionstatechange = () => {
         const state = this.pc?.iceConnectionState;

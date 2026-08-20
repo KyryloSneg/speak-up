@@ -1,7 +1,13 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  "exclude": ["src/**/tests/*", "playwright/**/*"],
+  "exclude": [
+    "src/**/tests/**/*",
+    "src/**/*.{test,spec}.*",
+    "playwright/**/*",
+    "playwright.config.ts",
+    "playwright-ct.config.ts"
+  ],
   "compilerOptions": {
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true,
