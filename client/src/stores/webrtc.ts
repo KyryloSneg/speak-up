@@ -119,18 +119,18 @@ export const useWebRTCStore = defineStore("webrtc", () => {
       });
     });
 
-    pc.start().then(() => {
-      const mediaStore = useMediaStore();
-      if (mediaStore.userMediaStream) {
-        pc.localUserMediaStreamEventHandler(mediaStore.userMediaStream);
-      }
-
-      if (mediaStore.screenSharingStream) {
-        pc.localScreenSharingStreamEventHandler(mediaStore.screenSharingStream);
-      }
-    });
-
+    pc.start();
     peerConnections.value.set(remoteId, pc);
+
+    const mediaStore = useMediaStore();
+    if (mediaStore.userMediaStream) {
+      pc.localUserMediaStreamEventHandler(mediaStore.userMediaStream);
+    }
+
+    if (mediaStore.screenSharingStream) {
+      pc.localScreenSharingStreamEventHandler(mediaStore.screenSharingStream);
+    }
+
     return pc;
   }
 

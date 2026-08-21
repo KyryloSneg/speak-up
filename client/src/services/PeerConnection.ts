@@ -22,6 +22,7 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
   public remoteId: string;
   public polite: boolean;
   public pc: RTCPeerConnection | null = null;
+  private initPromise: Promise<void> | null = null;
 
   public userMediaVideoSender: RTCRtpSender | null = null;
   public userMediaAudioSender: RTCRtpSender | null = null;
@@ -102,10 +103,147 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
     }
   }
 
+  public start(onError?: PeerConnectionOnError): this {
+    this.initPromise = (async () => {
+      try {
+        const webRTCConfig = await getWebRTCConfig();
+        this.pc = new RTCPeerConnection(webRTCConfig);
+
+        this.pc.oniceconnectionstatechange = () => {
+          const state = this.pc?.iceConnectionState;
+
+          if (state === "failed") {
+            console.warn(
+              `[PeerConnection:${this.remoteId}] ICE state failed. Attempting ICE restart...`,
+            );
+
+            this.pc?.restartIce();
+          }
+        };
+
+        this.pc.onconnectionstatechange = () => {
+          const state = this.pc?.connectionState;
+
+          if (state === "failed") {
+            this.handleError(
+              new Error("Peer connection failed"),
+              "Peer connection failed to establish or was lost",
+              onError,
+            );
+          }
+        };
+
+        this.pc.onnegotiationneeded = async () => {
+          if (this.isSettingRemoteDescription) return;
+          if (this.pc?.signalingState !== "stable") return;
+
+          try {
+            this.makingOffer = true;
+            if (!this.pc) return;
+
+            const offer = await this.pc.createOffer();
+            if (!offer.sdp) return;
+
+            const optimizedSdp = optimizeAudioSdp(offer.sdp);
+            const localOffer: RTCSessionDescriptionInit = {
+              type: "offer",
+              sdp: optimizedSdp,
+            };
+
+            await this.pc.setLocalDescription(localOffer);
+            this.emit(PeerConnectionEvents.SDP, {
+              sdp: this.pc.localDescription || localOffer,
+              type: "offer",
+            });
+          } catch (e) {
+            this.handleError(
+              e,
+              "Error during negotiation offer creation",
+              onError,
+            );
+          } finally {
+            this.makingOffer = false;
+          }
+        };
+
+        this.pc.onicecandidate = ({ candidate }) => {
+          if (candidate) {
+            this.emit(PeerConnectionEvents.ICE, { ice: candidate.toJSON() });
+          }
+        };
+
+        this.pc.onsignalingstatechange = () => {
+          if (this.pc?.signalingState === "stable") {
+            this.pc.getSenders().forEach(sender => {
+              if (sender.track?.kind !== "video") return;
+
+              try {
+                const params = sender.getParameters();
+                if (params.encodings && params.encodings.length > 0) {
+                  params.encodings.forEach(encoding => {
+                    if (!encoding.maxBitrate) encoding.maxBitrate = 500000;
+                  });
+
+                  sender.setParameters(params).catch(() => {});
+                }
+              } catch {}
+            });
+          }
+        };
+
+        this.pc.ontrack = event => {
+          const stream = event.streams[0] || new MediaStream([event.track]);
+
+          const videoTrack = event.track.kind === "video" ? event.track : null;
+          const audioTrack = event.track.kind === "audio" ? event.track : null;
+
+          const isScreenShare =
+            !!this.remoteScreenSharingStreamId &&
+            stream.id === this.remoteScreenSharingStreamId;
+
+          if (videoTrack && !isScreenShare) {
+            videoTrack.contentHint = "motion";
+          }
+
+          if (audioTrack) {
+            audioTrack.contentHint = isScreenShare ? "music" : "speech";
+          }
+
+          if (videoTrack) {
+            videoTrack.onended = () => {
+              if (isScreenShare) {
+                this.emit(
+                  PeerConnectionEvents.REMOTE_SCREEN_SHARING_STREAM,
+                  null,
+                );
+              }
+            };
+          }
+
+          if (isScreenShare) {
+            this.emit(
+              PeerConnectionEvents.REMOTE_SCREEN_SHARING_STREAM,
+              stream,
+            );
+          } else {
+            this.emit(PeerConnectionEvents.REMOTE_USER_MEDIA_STREAM, stream);
+          }
+        };
+      } catch (e) {
+        this.handleError(e, "Failed to initialize peer connection", onError);
+      }
+    })();
+
+    return this;
+  }
+
   public async localUserMediaStreamEventHandler(
     stream: MediaStream | null,
     onError?: PeerConnectionOnError,
   ): Promise<void> {
+    if (this.initPromise) await this.initPromise;
+    if (!this.pc) return;
+
     const hasStoppedUserMedia = !stream || !stream.getTracks().length;
 
     try {
@@ -115,8 +253,6 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
 
         return;
       }
-
-      if (!this.pc) return;
 
       const [videoTrack] = stream.getVideoTracks();
       const [audioTrack] = stream.getAudioTracks();
@@ -154,29 +290,30 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
     }
   }
 
-  public localScreenSharingStreamEventHandler(
+  public async localScreenSharingStreamEventHandler(
     stream: MediaStream | null,
     onError?: PeerConnectionOnError,
-  ): void {
+  ): Promise<void> {
+    if (this.initPromise) await this.initPromise;
+    if (!this.pc) return;
+
     this.localScreenSharingStreamId = stream?.id || null;
     const hasStoppedScreenSharing = !stream || !stream.getTracks().length;
 
     try {
       if (hasStoppedScreenSharing) {
-        if (this.pc && this.screenSharingAudioSender) {
+        if (this.screenSharingAudioSender) {
           this.pc.removeTrack(this.screenSharingAudioSender);
           this.screenSharingAudioSender = null;
         }
 
-        if (this.pc && this.screenSharingVideoSender) {
+        if (this.screenSharingVideoSender) {
           this.pc.removeTrack(this.screenSharingVideoSender);
           this.screenSharingVideoSender = null;
         }
 
         return;
       }
-
-      if (!this.pc) return;
 
       const [videoTrack] = stream.getVideoTracks();
       const [audioTrack] = stream.getAudioTracks();
@@ -208,146 +345,6 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
     }
   }
 
-  public async start(onError?: PeerConnectionOnError): Promise<this> {
-    try {
-      const webRTCConfig = await getWebRTCConfig();
-      this.pc = new RTCPeerConnection(webRTCConfig);
-
-      this.pc.oniceconnectionstatechange = () => {
-        const state = this.pc?.iceConnectionState;
-
-        if (state === "failed") {
-          console.warn(
-            `[PeerConnection:${this.remoteId}] ICE state failed. Attempting ICE restart...`,
-          );
-
-          this.pc?.restartIce();
-        }
-      };
-
-      this.pc.onconnectionstatechange = () => {
-        const state = this.pc?.connectionState;
-
-        if (state === "failed") {
-          this.handleError(
-            new Error("Peer connection failed"),
-            "Peer connection failed to establish or was lost",
-            onError,
-          );
-        }
-      };
-
-      this.pc.onnegotiationneeded = async () => {
-        if (this.isSettingRemoteDescription) return;
-        if (
-          this.polite &&
-          (!this.pc?.remoteDescription || this.pc?.signalingState !== "stable")
-        ) {
-          return;
-        }
-
-        try {
-          this.makingOffer = true;
-          if (!this.pc) return;
-
-          const offer = await this.pc.createOffer();
-          if (!offer.sdp) return;
-
-          const optimizedSdp = optimizeAudioSdp(offer.sdp);
-          const localOffer: RTCSessionDescriptionInit = {
-            type: "offer",
-            sdp: optimizedSdp,
-          };
-
-          await this.pc.setLocalDescription(localOffer);
-
-          if (this.pc.signalingState !== "have-local-offer") {
-            return;
-          }
-
-          this.emit(PeerConnectionEvents.SDP, {
-            sdp: this.pc.localDescription || localOffer,
-            type: "offer",
-          });
-        } catch (e) {
-          this.handleError(
-            e,
-            "Error during negotiation offer creation",
-            onError,
-          );
-        } finally {
-          this.makingOffer = false;
-        }
-      };
-
-      this.pc.onicecandidate = ({ candidate }) => {
-        if (candidate) {
-          this.emit(PeerConnectionEvents.ICE, { ice: candidate.toJSON() });
-        }
-      };
-
-      this.pc.onsignalingstatechange = () => {
-        if (this.pc?.signalingState === "stable") {
-          this.pc.getSenders().forEach(sender => {
-            if (sender.track?.kind !== "video") return;
-
-            try {
-              const params = sender.getParameters();
-              if (params.encodings && params.encodings.length > 0) {
-                params.encodings.forEach(encoding => {
-                  // if smth has overwritten this value, let it be as is
-                  if (!encoding.maxBitrate) encoding.maxBitrate = 500000;
-                });
-
-                sender.setParameters(params).catch(() => {});
-              }
-            } catch {}
-          });
-        }
-      };
-
-      this.pc.ontrack = event => {
-        const stream = event.streams[0] || new MediaStream([event.track]);
-
-        const videoTrack = event.track.kind === "video" ? event.track : null;
-        const audioTrack = event.track.kind === "audio" ? event.track : null;
-
-        const isScreenShare =
-          !!this.remoteScreenSharingStreamId &&
-          stream.id === this.remoteScreenSharingStreamId;
-
-        if (videoTrack && !isScreenShare) {
-          videoTrack.contentHint = "motion";
-        }
-
-        if (audioTrack) {
-          audioTrack.contentHint = isScreenShare ? "music" : "speech";
-        }
-
-        if (videoTrack) {
-          videoTrack.onended = () => {
-            if (isScreenShare) {
-              this.emit(
-                PeerConnectionEvents.REMOTE_SCREEN_SHARING_STREAM,
-                null,
-              );
-            }
-          };
-        }
-
-        if (isScreenShare) {
-          this.emit(PeerConnectionEvents.REMOTE_SCREEN_SHARING_STREAM, stream);
-        } else {
-          this.emit(PeerConnectionEvents.REMOTE_USER_MEDIA_STREAM, stream);
-        }
-      };
-    } catch (e) {
-      this.handleError(e, "Failed to initialize peer connection", onError);
-    }
-
-    return this;
-  }
-
   public stop(): this {
     if (this.pc) {
       this.pc.onnegotiationneeded = null;
@@ -375,6 +372,7 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
     desc: RTCSessionDescriptionInit,
     onError?: PeerConnectionOnError,
   ): Promise<this> {
+    if (this.initPromise) await this.initPromise;
     if (!this.pc) return this;
 
     const offerCollision =
@@ -425,6 +423,7 @@ class PeerConnection extends Emitter<PeerConnectionEventsValue> {
     onError?: PeerConnectionOnError,
   ): Promise<this> {
     if (!candidate) return this;
+    if (this.initPromise) await this.initPromise;
 
     if (!this.pc || !this.pc.remoteDescription) {
       this.iceCandidateQueue.push(candidate);

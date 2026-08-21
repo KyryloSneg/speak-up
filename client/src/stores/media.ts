@@ -7,10 +7,13 @@ import { useMediaSettingsStore } from "@/stores/mediaSettings";
 import { useWebRTCStore } from "@/stores/webrtc";
 import {
   FacingModes,
+  type FacingMode,
   type RoomMediaConfigs,
   type RoomMediaConfigUserId,
 } from "@/types/media";
 import { MediaDeviceEvents } from "@/types/mediaDeviceEvents";
+import getCameraFacingMode from "@/utils/getCameraFacingMode";
+import getIsPhysicalCameraSelected from "@/utils/getIsPhysicalCameraSelected";
 import { mediaDevice } from "@/utils/mediaDevice";
 import socket from "@/utils/socket";
 import {
@@ -75,8 +78,61 @@ export const useMediaStore = defineStore("media", () => {
   }
 
   function flipCamera(value: boolean | null = null): void {
+    const oldValue = isCameraFlipped.value;
     isCameraFlipped.value =
       typeof value === "boolean" ? value : !isCameraFlipped.value;
+
+    if (!hasStartedMedia.value) {
+      start();
+      return;
+    }
+
+    if (isCameraFlipped.value === oldValue) return;
+
+    function getFacingMode(isCameraFlipped: boolean): FacingMode {
+      return isCameraFlipped ? FacingModes.ENVIRONMENT : FacingModes.USER;
+    }
+
+    const targetFacingMode = getFacingMode(isCameraFlipped.value);
+    if (cameras.value.length < 2) {
+      mediaDevice.toggleIsCameraFlipped(targetFacingMode);
+      return;
+    }
+
+    const mediaSettingsStore = useMediaSettingsStore();
+    const currentCamera = [...cameras.value]
+      .reverse() // reverse in order to be closer to the next camera
+      .find(camera => getIsPhysicalCameraSelected(camera));
+
+    const rawIndex = cameras.value.findIndex(
+      camera =>
+        camera.deviceId ===
+        (currentCamera?.deviceId || mediaSettingsStore.defaultCamera),
+    );
+
+    const currentIndex = rawIndex === -1 ? 0 : rawIndex;
+
+    let nextCamera = Array.from(
+      // move left to right, moving the previous cameras to the very end
+      new Set([
+        ...cameras.value.slice(currentIndex + 1),
+        ...cameras.value.slice(0, currentIndex),
+      ]),
+    ).find(camera => {
+      const facingMode = getCameraFacingMode(camera);
+      return facingMode === targetFacingMode;
+    });
+
+    if (!nextCamera) {
+      nextCamera = cameras.value[(currentIndex + 1) % cameras.value.length];
+    }
+
+    if (!nextCamera) {
+      mediaDevice.toggleIsCameraFlipped(targetFacingMode);
+      return;
+    }
+
+    mediaSettingsStore.selectedCamera = nextCamera.deviceId;
   }
 
   function updateDevices(
@@ -89,9 +145,10 @@ export const useMediaStore = defineStore("media", () => {
       return;
     }
 
-    if (!config.value.audio && !config.value.video) return;
-
     const onError: StartUserMediaOnError = info => {
+      if (audio && !config.value.audio) return;
+      if (video && !config.value.video) return;
+
       toast.error(info.message);
     };
 
@@ -111,13 +168,20 @@ export const useMediaStore = defineStore("media", () => {
     const video =
       newVideo !== prevSelectedDevices.camera ? newVideo : undefined;
 
-    mediaDevice.changeDeviceId({ audio, video }, onError);
+    mediaDevice.changeDeviceId(
+      { audio, video },
+      {
+        disabled: { audio: !config.value.audio, video: !config.value.video },
+        onError,
+      },
+    );
   }
 
   function start(): void {
     if (hasStartedMedia.value) return;
     if (!config.value.audio && !config.value.video) return;
 
+    const mediaSettingsStore = useMediaSettingsStore();
     hasStartedMedia.value = true;
 
     let errorsAmount = 0;
@@ -168,7 +232,6 @@ export const useMediaStore = defineStore("media", () => {
       };
 
       function calcConstraints() {
-        const mediaSettingsStore = useMediaSettingsStore();
         const { microphone: selectedMic, camera: selectedCamera } =
           mediaSettingsStore.selectedDevices;
 
@@ -192,9 +255,12 @@ export const useMediaStore = defineStore("media", () => {
             [selectedCameraToUse === "default" ? "ideal" : "exact"]:
               selectedCameraToUse,
           },
-          facingMode: isCameraFlipped.value
-            ? FacingModes.ENVIRONMENT
-            : FacingModes.USER,
+          facingMode:
+            cameras.value.length >= 2
+              ? isCameraFlipped.value
+                ? FacingModes.ENVIRONMENT
+                : FacingModes.USER
+              : undefined,
         } as const;
 
         return { audioConstraints, videoConstraints };

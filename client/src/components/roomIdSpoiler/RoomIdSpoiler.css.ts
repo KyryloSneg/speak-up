@@ -76,7 +76,7 @@ export const buttonGroup = style({
 });
 
 export const revealButton = style({
-  minWidth: "4.375rem",
+  minWidth: "4.625rem",
 });
 
 export const copyButton = recipe({

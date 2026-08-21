@@ -1,5 +1,8 @@
 import { useMediaStore } from "@/stores/media";
 import { useMediaSettingsStore } from "@/stores/mediaSettings";
+import { FacingModes } from "@/types/media";
+import getCameraFacingMode from "@/utils/getCameraFacingMode";
+import getIsPhysicalCameraSelected from "@/utils/getIsPhysicalCameraSelected";
 import { watch } from "vue";
 
 function useSyncSelectedDevicesWithUserMedia() {
@@ -8,7 +11,16 @@ function useSyncSelectedDevicesWithUserMedia() {
 
   watch(
     () => mediaSettingsStore.selectedDevices,
-    (_, oldValue) => mediaStore.updateDevices(oldValue),
+    (_, oldValue) => {
+      mediaStore.updateDevices(oldValue);
+      const currentCamera = mediaStore.cameras.find(camera =>
+        getIsPhysicalCameraSelected(camera),
+      );
+
+      if (!currentCamera) return;
+      mediaStore.isCameraFlipped =
+        getCameraFacingMode(currentCamera) === FacingModes.ENVIRONMENT;
+    },
   );
 }
 

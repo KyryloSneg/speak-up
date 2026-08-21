@@ -1,7 +1,7 @@
 <template>
   <BaseUserMediaButton
     @click="mediaStore.flipCamera"
-    :value="mediaStore.isCameraFlipped"
+    :value="true"
     :disabled="!mediaStore.config.video"
     aria-label="Flip camera"
   >

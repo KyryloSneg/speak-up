@@ -21,6 +21,7 @@ export type StartUserMediaOnError = (info: {
 export interface StartUserMediaOptions {
   audioConstraints?: MediaTrackConstraints;
   videoConstraints?: MediaTrackConstraints;
+  disabled?: { audio?: boolean; video?: boolean };
   onError?: StartUserMediaOnError;
 }
 
@@ -224,6 +225,17 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
       };
 
       const onStream = (stream: MediaStream) => {
+        const audioTracks = stream.getAudioTracks();
+        const videoTracks = stream.getVideoTracks();
+
+        audioTracks?.forEach(track => {
+          if (options.disabled?.audio) track.enabled = false;
+        });
+
+        videoTracks?.forEach(track => {
+          if (options.disabled?.video) track.enabled = false;
+        });
+
         this.onStream(stream, "userMedia");
       };
 
@@ -355,7 +367,10 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
 
   changeDeviceId(
     options: { audio?: string | null; video?: string | null } = {},
-    onError?: StartUserMediaOnError,
+    startOptions?: Omit<
+      StartUserMediaOptions,
+      "audioConstraints" | "videoConstraints"
+    >,
   ): MediaDevice {
     if (this.userMediaStream) {
       // NOTE: take into account only live tracks here
@@ -400,7 +415,7 @@ class MediaDevice extends Emitter<MediaDeviceEventNames> {
             audio: hasMicChanged,
             video: hasCameraChanged,
           },
-          { audioConstraints, videoConstraints, onError },
+          { audioConstraints, videoConstraints, ...(startOptions || {}) },
         );
       }
     }
