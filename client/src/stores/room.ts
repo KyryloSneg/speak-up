@@ -1,4 +1,5 @@
 import router from "@/router";
+import getWebRTCConfig from "@/services/webrtcConfig";
 import { useAuthStore } from "@/stores/auth";
 import { useMediaStore } from "@/stores/media";
 import { useWebRTCStore } from "@/stores/webrtc";
@@ -218,6 +219,8 @@ export const useRoomStore = defineStore("room", () => {
   }
 
   function createRoom(maxMembers: number): void {
+    getWebRTCConfig();
+
     const mediaStore = useMediaStore();
     socket.emit(SocketEvents.CREATE_ROOM, {
       maxMembers,
@@ -231,6 +234,8 @@ export const useRoomStore = defineStore("room", () => {
   }
 
   function joinRoom(id: string): void {
+    getWebRTCConfig();
+
     const mediaStore = useMediaStore();
     socket.emit(SocketEvents.JOIN_ROOM, { id, mediaConfig: mediaStore.config });
 

@@ -15,6 +15,7 @@ function useAutoHidingOverlay(
   const isHovered = useElementHover(elemRef);
   const { focused } = useFocusWithin(elemRef);
 
+  // TODO: do not close if interacting with popup (useElementIdle on popup or smth)
   const isPopupOpened = useIsPopupOpened(
     () => (toValue(isWithPopups) ? elemRef.value : undefined),
     open => {

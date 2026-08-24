@@ -14,7 +14,7 @@ import {
   type UserDto,
 } from "@speak-up/shared";
 import { defineStore } from "pinia";
-import { ref, shallowRef } from "vue";
+import { ref, watchEffect } from "vue";
 import { toast } from "vue-sonner";
 
 export interface RemoteStreams {
@@ -23,7 +23,7 @@ export interface RemoteStreams {
 }
 
 export const useWebRTCStore = defineStore("webrtc", () => {
-  const peerConnections = shallowRef<Map<string, PeerConnection>>(new Map());
+  const peerConnections = ref<Map<string, PeerConnection>>(new Map());
   const remoteStreams = ref<Map<string, RemoteStreams>>(new Map());
 
   const sharingScreenAnnouncerText = ref("");
@@ -121,6 +121,7 @@ export const useWebRTCStore = defineStore("webrtc", () => {
 
     pc.start();
     peerConnections.value.set(remoteId, pc);
+    console.log("set shit", peerConnections.value);
 
     const mediaStore = useMediaStore();
     if (mediaStore.userMediaStream) {
@@ -161,6 +162,8 @@ export const useWebRTCStore = defineStore("webrtc", () => {
     peerConnections.value.forEach(pc => removePeerConnection(pc.remoteId));
     sharingScreenAnnouncerText.value = "";
   }
+
+  watchEffect(() => console.log("peer connections", peerConnections.value));
 
   return {
     peerConnections,

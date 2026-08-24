@@ -9,8 +9,8 @@ function getIsPhysicalCameraSelected(
     selectedCamera || mediaSettingsStore.selectedCamera;
 
   return [
-    selectedCamera,
-    ...(selectedCamera === mediaSettingsStore.defaultCamera
+    selectedCameraToUse,
+    ...(selectedCameraToUse === mediaSettingsStore.defaultCamera
       ? ["default", mediaSettingsStore.defaultCamera]
       : []),
   ].includes(camera.deviceId);
